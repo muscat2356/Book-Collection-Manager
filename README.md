@@ -1,1 +1,321 @@
 # LibraShare
+
+蔵書の登録・検索・貸出/返却を管理する Web アプリケーション。  
+認証基盤を Keycloak に外部化し、Spring Boot REST API と React SPA を分離構成で構築したポートフォリオ作品です。
+
+## 概要
+
+| 項目 | 内容 |
+|------|------|
+| テーマ | 蔵書管理（貸出管理） |
+| 開発フロー | **学習 → 共有 → 設計 → 実装** |
+| 構成 | API + SPA 分離 |
+| バックエンド | Spring Boot 3.x + **Java 21** |
+| フロントエンド | React + TypeScript + Vite |
+| 認証 | Keycloak（Docker / OIDC / JWT） |
+| インフラ | Docker Compose |
+| チーム | 2名。**Member A = セキュリティ/バック中心、Member B = フロント中心** |
+| 対象外 | WebSocket / チャット / リアルタイム通信 |
+
+**コミットライン**: MVP-A（必須）のみ。**Stretch**: MVP-B（フロント強化・検索・admin UI）。
+
+---
+
+## 主な機能
+
+### MVP-A（必須）
+
+| ID | 機能 | Member A | Member B |
+|----|------|----------|----------|
+| F-01 | Keycloak ログイン + RBAC | Security, Keycloak, Docker | Keycloak JS, Protected Route |
+| F-02 | 書籍 CRUD（API）+ 一覧・詳細 UI | CRUD API, Flyway | 一覧・詳細画面 |
+| F-04 | 貸出 / 返却 + 在庫連動 | 貸出 API | 借りる/返すボタン |
+| F-05 | マイ貸出中一覧 | `GET /api/loans/me` | マイページ UI |
+| F-07 | `docker compose up` | Compose 全体 | フロント dev 手順 |
+
+- [ ] F-01 Keycloak ログイン（ロール: `admin` / `member`）
+- [ ] F-02 書籍一覧・詳細表示 / 書籍 CRUD API
+- [ ] F-04 書籍の貸出・返却（在庫数連動）
+- [ ] F-05 マイ貸出中一覧
+- [ ] F-07 デモ環境の Docker 一括起動
+
+### MVP-B（Stretch・Day 18 Go 後）
+
+| ID | 機能 | 担当 | 条件 |
+|----|------|------|------|
+| F-02b | admin 書籍登録 UI | B | MVP-A 完了 |
+| F-03 | 書籍検索 | A: API / B: UI | MVP-A 完了 |
+| F-10 | UX polish（ローディング、エラー表示、レスポンシブ） | B | 余力 |
+
+- [ ] F-02b admin 向け書籍登録 UI
+- [ ] F-03 書籍検索（タイトル・著者）
+- [ ] F-10 ローディング / エラー表示など UX 改善
+
+### スコープ外
+
+- WebSocket / STOMP / リアルタイムチャット
+- REST コメント・書籍ディスカッション
+- 延滞罰金、外部書籍 API、決済、モバイルアプリ
+
+### 時間不足時の削る順番
+
+| 優先 | あきらめる機能 | 代替案 |
+|------|----------------|--------|
+| 1位 | F-02b admin 書籍登録 UI | Swagger UI / Postman |
+| 2位 | F-03 サーバー側検索 | フロント側フィルタのみ |
+| 3位 | F-10 UX polish | 最低限のエラー表示のみ |
+| 4位 | F-05 返却済み履歴 | 貸出中のみ表示 |
+
+---
+
+## 技術スタック
+
+### Backend（Spring Boot 3.x + Java 21）
+
+- `spring-boot-starter-web` — REST API
+- `spring-boot-starter-jdbc` + `JdbcTemplate`
+- `spring-boot-starter-security` + `spring-boot-starter-oauth2-resource-server`
+- Flyway — DB マイグレーション
+- springdoc-openapi — Swagger UI / OpenAPI 3
+
+### Frontend（React）
+
+- React + TypeScript + Vite
+- Keycloak JS アダプタ（OIDC Authorization Code + PKCE）
+- axios / fetch
+
+### Infra
+
+- PostgreSQL 15+
+- Keycloak
+- Docker Compose（`postgres` / `keycloak` / `api`）
+
+| レイヤ | 技術 |
+|--------|------|
+| Backend | Java 21, Spring Boot 3.x, Spring JDBC, Spring Security, OAuth2 Resource Server |
+| Frontend | React, TypeScript, Vite, Keycloak JS Adapter |
+| DB | PostgreSQL 15+ |
+| Auth | Keycloak |
+| API 仕様 | OpenAPI 3（springdoc-openapi） |
+| Migration | Flyway |
+| Infra | Docker Compose |
+
+---
+
+## アーキテクチャ
+
+```
+[React SPA] ── OIDC ──> [Keycloak]
+     |
+     | REST (Bearer JWT)
+     v
+[Spring Boot API] ──> [PostgreSQL]
+```
+
+- **フロントエンド**: Keycloak から `access_token` を取得し、`Authorization: Bearer` で API を呼び出す
+- **バックエンド**: OAuth2 Resource Server により JWT を検証し、`@PreAuthorize` で RBAC を適用
+- **CSRF**: Bearer JWT による stateless API のため CSRF は無効（[セキュリティ](#セキュリティ) 参照）
+
+---
+
+## リポジトリ構成（予定）
+
+```
+.
+├── backend/          # Spring Boot API
+├── frontend/         # React SPA
+├── docker/           # Docker Compose, Keycloak 設定
+├── docs/             # ER 図, OpenAPI, 画面設計
+└── README.md
+```
+
+---
+
+## DB スキーマ（MVP-A）
+
+| テーブル | カラム |
+|----------|--------|
+| `books` | id, title, author, isbn, stock_count, created_at |
+| `users` | id, keycloak_sub, display_name |
+| `loans` | id, book_id, user_id, borrowed_at, returned_at, status |
+
+---
+
+## API エンドポイント
+
+| Method | Path | 説明 | 権限 |
+|--------|------|------|------|
+| GET | `/api/books` | 書籍一覧（`?q=` で検索は stretch） | 認証済み |
+| GET | `/api/books/{id}` | 書籍詳細 | 認証済み |
+| POST | `/api/books` | 書籍登録 | admin |
+| PUT | `/api/books/{id}` | 書籍更新 | admin |
+| DELETE | `/api/books/{id}` | 書籍削除 | admin |
+| POST | `/api/loans` | 貸出（body: `{ bookId }`） | member |
+| PUT | `/api/loans/{id}/return` | 返却 | member |
+| GET | `/api/loans/me` | マイ貸出中一覧 | member |
+
+---
+
+## セキュリティ
+
+- **認証**: Keycloak（外部 IdP）
+- **認可**: Spring Security + JWT + ロールベースアクセス制御（RBAC）
+- **CSRF**: SPA + Bearer JWT は stateless のため CSRF 保護は無効化。Cookie セッションを導入する場合は CSRF トークン検証を有効化する
+- **CORS**: フロントオリジンのみ許可
+
+---
+
+## 開発体制
+
+| 領域 | Member A（セキュリティ/バック） | Member B（フロント） |
+|------|--------------------------------|----------------------|
+| 主担当 | Keycloak, Spring Security, JWT, RBAC, REST API, Docker | React 全画面, Keycloak JS, API クライアント |
+| MVP-B stretch | F-03 検索 API | F-02b admin UI, F-10 UX |
+| Phase 1 学習 | Day 2〜4: セキュリティ専念 | Day 2〜4: フロント専念 |
+| 相手分野の習得 | Day 5 Q&A + EX-3/4 ペア実装 | 同上 |
+
+---
+
+## 開発フロー（1ヶ月）
+
+本プロジェクトは **学習 → 共有 → 設計 → 実装** の 4 フェーズで進めます。未理解のまま詳細設計は行いません。
+
+| Phase | 期間 | 目的 | やること |
+|-------|------|------|----------|
+| **1 学習** | Day 1 + Day 2〜4 | 主担当分野を深掘り | A=セキュリティ、B=フロント（並行学習） |
+| **2 共有** | Day 5 | 学習成果を揃える | 発表、認証×UI 接点整理 |
+| **3 設計** | Day 6〜8 | 理解に基づいて設計 | ER, OpenAPI, 画面一覧, 認証シーケンス図 |
+| **4 実装** | Day 9〜28 | MVP-A → MVP-B | 認証 → CRUD → 貸出 →（余力）stretch |
+
+### Phase 1 — 並行学習（Day 1〜4）
+
+| Day | Member A | Member B | 共同 |
+|-----|----------|----------|------|
+| 1 | キックオフ | キックオフ | テーマ、MVP-A/B 合意 |
+| 2 | OIDC/JWT、Spring Security | Vite + React、コンポーネント | 15分進捗共有 |
+| 3 | Keycloak Docker、Realm/Roles | Router、レイアウト、ワイヤー | 15分進捗共有 |
+| 4 | Resource Server、RBAC、CORS | axios 雛形、画面遷移図 | 発表資料提出 |
+
+**Phase 1 成果物**
+
+| 担当 | 提出物 |
+|------|--------|
+| A | 認証アーキテクチャ図、Keycloak 設定メモ、実装方針 |
+| B | React ミニアプリ、画面構成案、コンポーネント構成メモ |
+
+### Phase 2 — 共有・発表（Day 5）
+
+| 時間 | 内容 |
+|------|------|
+| 午前 | SHARE-1: A 発表（セキュリティ） / SHARE-2: B 発表（フロント） |
+| 午後 | SHARE-3: 認証×UI 接点整理、設計論点、MVP-A/B 再確認 |
+
+### Phase 3 — 設計（Day 6〜8）
+
+| Day | 内容 |
+|-----|------|
+| 6 | ER 図、認証シーケンス図 |
+| 7 | OpenAPI（books, loans）、画面一覧・遷移図 |
+| 8 | 設計レビュー、Docker 構成図、MVP-B 優先順位確定 |
+
+**画面（5〜6枚）**: ログイン、書籍一覧、書籍詳細、マイ貸出、（stretch）admin 書籍登録
+
+### Phase 4 — 実装（Day 9〜28）
+
+| 期間 | 内容 | 担当 |
+|------|------|------|
+| Day 9〜13 | Docker + Keycloak + Spring Security + React ログイン（EX-3 ペア） | A 主 / B 主 |
+| Day 14〜18 | MVP-A: 書籍 API+UI、貸出 API+UI、マイ貸出、Seed データ | A API / B UI |
+| Day 18 | Go/No-Go 判定 | 共同 |
+| Day 19〜22 | MVP-B stretch: admin UI → 検索 → UX polish | B 主 / A サポート |
+| Day 23〜28 | E2E テスト、README、相互デモ、スクリーンショット | 共同 |
+
+**Day 18 Go/No-Go**
+
+| 判定 | 条件 | 次のアクション |
+|------|------|----------------|
+| Go | ログイン→借りる→返すが E2E で動く | F-02b → F-03 → F-10 |
+| No-Go | 貸出未完了 | MVP-B 捨て、Day 23 仕上げへ |
+
+### 情報交換セッション
+
+| # | Phase | 内容 |
+|---|-------|------|
+| — | 1（Day 2〜4） | A=セキュリティ、B=フロント（並行学習） |
+| SHARE-1〜3 | 2（Day 5） | 発表 + 接点整理 |
+| — | 3（Day 6〜8） | 共同設計 |
+| EX-3 | 4（Day 9〜13） | ペア: 認証通し |
+| EX-4 | 4（Day 14〜18） | ペア: API 連携 |
+| SYNC | 毎週 | 1h 進捗確認 |
+
+---
+
+## 学習目標との対応
+
+| 技術 | 実装 |
+|------|------|
+| DB / CRUD | 書籍・貸出（MVP-A） |
+| Security / CSRF | Keycloak + Spring Security RBAC（A 主担当） |
+| Keycloak | 外部認証基盤（A 設定、B JS 連携） |
+| Docker | Compose 一括起動（A） |
+| フロント | React SPA 全画面（B） |
+| WebSocket | 計画外（除外） |
+
+---
+
+## 必要条件
+
+- Java 21+
+- Node.js 20+（フロント開発時）
+- Docker / Docker Compose
+- Maven 3.9+
+
+## 起動方法
+
+> 実装完了後に具体コマンドを追記してください。
+
+```bash
+# 1. リポジトリを clone
+git clone https://github.com/<your-org>/LibraShare.git
+cd LibraShare
+
+# 2. バックエンド + DB + Keycloak を起動
+docker compose up -d
+
+# 3. フロントエンド（開発時）
+cd frontend
+npm install
+npm run dev
+```
+
+| サービス | URL（例） |
+|----------|-----------|
+| Frontend | http://localhost:5173 |
+| API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| Keycloak | http://localhost:8080/auth （要設定確認） |
+
+## デモアカウント（予定）
+
+| ロール | ユーザー名 | 用途 |
+|--------|------------|------|
+| admin | `admin` | 書籍 CRUD |
+| member | `member` | 貸出・返却 |
+
+---
+
+## スクリーンショット
+
+<!-- 実装後に画像を追加 -->
+<!-- ![書籍一覧](./docs/screenshots/book-list.png) -->
+
+---
+
+## 作者
+
+- Backend / Security（Member A）: [名前]
+- Frontend（Member B）: [名前]
+
+## ライセンス
+
+MIT License（またはプロジェクトに合わせて変更）
