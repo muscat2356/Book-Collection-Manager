@@ -1,0 +1,11 @@
+#docker compose upset
+docker compose -f docker-compose.yml up -d
+
+#docker compose の一部起動
+docker compose up -d postgres keycloak
+
+#docker start
+docker compose start
+
+#docker stop
+docker compose stop
