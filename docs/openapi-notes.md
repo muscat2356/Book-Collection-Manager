@@ -4,14 +4,126 @@
 
 ---
 
-## 社員ロール方針
+## ロール方針
 
-LibraShare は社内バックオフィス向けの蔵書管理として扱う。一般公開ユーザーは想定しない。
+LibraShare は社内バックオフィス向けの蔵書管理として扱う。全ユーザーの認証・ロール管理は Keycloak を正とし、アプリ DB の `users` には貸出対象の利用者（`general_user`）のみを参照情報として保持する。社員・管理社員は `users` に登録せず、Keycloak 管理コンソールで管理する。
 
-| ロール | 説明 |
-|--------|------|
-| `general_employee` | 一般社員。蔵書参照、貸出/返却、マイ貸出を利用できる |
-| `admin_employee` | 管理社員。一般社員の機能に加えて、蔵書追加・更新・削除を利用できる |
+| ロール | 説明 | 管理場所 |
+|--------|------|----------|
+| `general_user` | 貸出対象の利用者。バックオフィス画面の操作は対象外 | アプリ（`/api/users`）+ Keycloak |
+| `general_employee` | 一般社員。蔵書参照、利用者管理、貸出/返却、貸出中一覧を利用できる | Keycloak 管理コンソール |
+| `admin_employee` | 管理社員。一般社員の機能に加えて、蔵書追加・更新・削除を利用できる | Keycloak 管理コンソール |
+
+---
+
+## 利用者管理 API（F-06）
+
+一般社員以上が利用できる API。**対象は貸出対象の利用者（`general_user`）のみ**で、社員・管理社員は扱わない（Keycloak 管理コンソールで管理）。これにより一般社員が社員・管理社員の情報を編集できてしまう権限昇格を構造的に防ぐ。
+
+Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し（付与ロールは常に `general_user`）、アプリ DB の `users` に `keycloakSub` と表示情報を保存する。削除は物理削除ではなく **論理削除 + Keycloak 無効化** とする（貸出履歴を壊さないため）。
+
+アプリ DB は独自の `username` を保持せず、表示は `displayName`、利用者の一意識別は `keycloakSub` で行う。付与ロールは常に `general_user` のため `users` に `role` カラムは持たず、API のボディでもロールは受け取らない。Keycloak 側のログイン識別子（`username`）には `email` を用いる想定。
+
+### GET /api/users
+
+**権限**: `general_employee` / `admin_employee`
+
+```json
+// Response 200 （デフォルトは is_active=true のみ。?includeInactive=true で論理削除済みも含む）
+[
+  {
+    "id": 10,
+    "keycloakSub": "8d5f5c6e-1111-2222-3333-123456789abc",
+    "displayName": "山田 太郎",
+    "email": "yamada@example.com",
+    "isActive": true
+  }
+]
+```
+
+### GET /api/users/{id}
+
+**権限**: `general_employee` / `admin_employee`
+
+```json
+// Response 200
+{
+  "id": 10,
+  "keycloakSub": "8d5f5c6e-1111-2222-3333-123456789abc",
+  "displayName": "山田 太郎",
+  "email": "yamada@example.com",
+  "isActive": true
+}
+```
+
+### POST /api/users
+
+**権限**: `general_employee` / `admin_employee`
+
+```json
+// Request
+{
+  "displayName": "山田 太郎",
+  "email": "yamada@example.com",
+  "temporaryPassword": "change-me"
+}
+
+// Response 201
+{
+  "id": 10,
+  "keycloakSub": "8d5f5c6e-1111-2222-3333-123456789abc",
+  "displayName": "山田 太郎",
+  "email": "yamada@example.com",
+  "isActive": true
+}
+```
+
+### PUT /api/users/{id}
+
+**権限**: `general_employee` / `admin_employee`
+
+```json
+// Request
+{
+  "displayName": "山田 太郎",
+  "email": "yamada.taro@example.com"
+}
+
+// Response 200
+{
+  "id": 10,
+  "keycloakSub": "8d5f5c6e-1111-2222-3333-123456789abc",
+  "displayName": "山田 太郎",
+  "email": "yamada.taro@example.com",
+  "isActive": true
+}
+```
+
+### DELETE /api/users/{id}
+
+**権限**: `general_employee` / `admin_employee`
+
+論理削除。物理削除は行わない。
+
+```json
+// Response 204
+{}
+
+// Response 409（貸出中の loans があり削除不可）
+{
+  "error": "USER_HAS_ACTIVE_LOANS",
+  "message": "貸出中の書籍があるため削除できません"
+}
+```
+
+処理内容:
+
+1. 対象利用者に `status=BORROWED` の `loans` があれば `409 Conflict` を返し、削除しない
+2. 貸出中がなければ Keycloak 側の利用者を無効化（`enabled=false`）する
+3. アプリ DB の `users` を論理削除する（`is_active=false`）
+4. `loans` の過去履歴はそのまま残す
+
+無効化済み利用者は通常の利用者一覧には表示しないが、貸出履歴や `?includeInactive=true` では参照できる。
 
 ---
 
@@ -154,7 +266,7 @@ GET /api/books?q=react&page=0&size=20
 
 ---
 
-## 貸出 API（F-04 参考）
+## 貸出 API（F-04 / F-05 参考）
 
 MVP-A で実装。OpenAPI 設計時の参考。
 
@@ -164,7 +276,10 @@ MVP-A で実装。OpenAPI 設計時の参考。
 
 ```json
 // Request
-{ "bookId": 1 }
+{
+  "bookId": 1,
+  "userId": 10
+}
 
 // Response 201
 {
@@ -176,6 +291,8 @@ MVP-A で実装。OpenAPI 設計時の参考。
   "status": "BORROWED"
 }
 ```
+
+一般社員以上が、貸出対象ユーザーと書籍を選択して貸出登録する。API は `users` と `books` の存在、`books.stockCount` を確認し、`loans` 作成と在庫減算を行う。
 
 ### PUT /api/loans/{id}/return
 
@@ -191,9 +308,36 @@ MVP-A で実装。OpenAPI 設計時の参考。
 }
 ```
 
+### GET /api/loans/active
+
+貸出中の利用者を把握するため、`status=BORROWED` の貸出を利用者情報つきで返す。
+
+```json
+// Response 200
+[
+  {
+    "id": 42,
+    "book": {
+      "id": 1,
+      "title": "リーダブルコード",
+      "author": "Boswell"
+    },
+    "user": {
+      "id": 10,
+      "displayName": "山田 太郎"
+    },
+    "borrowedAt": "2026-06-30T10:00:00Z",
+    "returnedAt": null,
+    "status": "BORROWED"
+  }
+]
+```
+
+`GET /api/loans/me` のような利用者自身のマイ貸出は、バックオフィス用途の MVP-A では対象外とする。
+
 ---
 
 ## 関連ドキュメント
 
-- [README](../README.md) — 社員ロール、F-02a/b/c、F-04、F-11 の機能定義
+- [README](../README.md) — 3 ロール、利用者管理、F-02a/b/c、F-04、F-05、F-06、F-11 の機能定義
 - [future-considerations.md](./future-considerations.md) — バッチ・延滞の将来案
