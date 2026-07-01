@@ -1,11 +1,20 @@
-#docker compose upset
+#イメージが無ければ作り、全サービスのコンテナを作って起動する
 docker compose -f docker-compose.yml up -d
 
-#docker compose の一部起動
+#指定したサービスだけを作って起動する。
 docker compose up -d postgres keycloak
 
-#docker start
+#すでに作成済みの停止中コンテナを動かす
 docker compose start
 
-#docker stop
+#すでに作成済みの停止中コンテナを停止
 docker compose stop
+
+#イメージを必ず作り直してから全サービスを起動（コード変更時に実施）
+docker compose up -d --build
+
+#コンテナを停止して削除する
+docker compose down
+
+#postgres コンテナの中に入って psql実行
+docker compose exec postgres psql -U postgres -d libra
