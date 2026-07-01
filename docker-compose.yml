@@ -19,15 +19,15 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     container_name: Libra-keycloak
-    command: ["start-dev", "--import-realm"]
+    command: ["start-dev"] # "--import-realm"
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: "true"
     ports:
       - "8080:8080"
-    volumes:
-      - ./keycloak/library-realm.json:/opt/keycloak/data/import/library-realm.json
+    #volumes:
+     # - ./keycloak/library-realm.json:/opt/keycloak/data/import/library-realm.json
     depends_on:
       postgres:
         condition: service_healthy
