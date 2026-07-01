@@ -18,3 +18,5 @@ docker compose down
 
 #postgres コンテナの中に入って psql実行
 docker compose exec postgres psql -U postgres -d libra
+
+docker compose up -d --build postgres keycloak backend
