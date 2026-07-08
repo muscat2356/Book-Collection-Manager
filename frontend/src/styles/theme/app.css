@@ -1,0 +1,539 @@
+/* ===== レイアウト ===== */
+
+.app-header {
+  background: var(--header-bg);
+  color: var(--header-text);
+  padding: 1rem 1.5rem 1.25rem;
+  box-shadow: var(--shadow-md);
+}
+
+.app-header__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.app-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  color: var(--header-text);
+  letter-spacing: 0.04em;
+}
+
+.app-subtitle {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  margin: 0 0 1rem;
+}
+
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.nav-link {
+  color: var(--header-text);
+  text-decoration: none;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.app-main {
+  flex: 1;
+  padding: 1.5rem;
+  text-align: left;
+}
+
+/* ===== ページ共通 ===== */
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.page__lead {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+.page-status {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.page-status--error {
+  color: var(--danger-text);
+  background: var(--danger-bg);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+}
+
+/* ===== 書籍一覧グリッド ===== */
+
+.book-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+/* ===== 書籍カード ===== */
+
+.book-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.book-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.book-card__body {
+  padding: 1.25rem 1.25rem 1rem;
+  flex: 1;
+}
+
+.book-card__header {
+  margin-bottom: 0.75rem;
+}
+
+.book-card__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.4;
+}
+
+.book-card__meta {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.75rem;
+}
+
+.book-card__meta dt {
+  display: none;
+}
+
+.book-card__meta dd {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.book-card__link {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.book-card__link:hover {
+  text-decoration: underline;
+}
+
+/* 操作エリア（借りる・返却） */
+.book-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  background: var(--secondary-bg);
+  border-top: 1px solid var(--border);
+}
+
+/* ===== ボタン ===== */
+
+.btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn--secondary {
+  background: var(--bg-card);
+  color: var(--secondary);
+  border: 1px solid var(--border);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ===== 在庫表示 ===== */
+
+.stock-indicator {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.875rem;
+  border: 1px solid var(--border);
+}
+
+.stock-indicator--available {
+  background: var(--success-bg);
+  border-color: rgba(46, 125, 50, 0.25);
+}
+
+.stock-indicator--low {
+  background: #fff8e6;
+  border-color: rgba(230, 126, 34, 0.35);
+}
+
+.stock-indicator--out {
+  background: var(--danger-bg);
+  border-color: rgba(183, 28, 28, 0.25);
+}
+
+.stock-indicator__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0 0 0.2rem;
+}
+
+.stock-indicator__count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  margin: 0 0 0.5rem;
+  line-height: 1;
+}
+
+.stock-indicator__number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.stock-indicator--out .stock-indicator__number {
+  color: var(--danger-text);
+}
+
+.stock-indicator--low .stock-indicator__number {
+  color: #c05621;
+}
+
+.stock-indicator--available .stock-indicator__number {
+  color: var(--success-text);
+}
+
+.stock-indicator__unit {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.stock-indicator__max {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: 0.15rem;
+}
+
+.stock-indicator__bar {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.stock-indicator__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.stock-indicator--available .stock-indicator__fill {
+  background: var(--success-text);
+}
+
+.stock-indicator--low .stock-indicator__fill {
+  background: #dd6b20;
+}
+
+.stock-indicator--out .stock-indicator__fill {
+  background: var(--danger-text);
+}
+
+.stock-indicator__status {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.stock-indicator--available .stock-indicator__status {
+  color: var(--success-text);
+}
+
+.stock-indicator--low .stock-indicator__status {
+  color: #c05621;
+}
+
+.stock-indicator--out .stock-indicator__status {
+  color: var(--danger-text);
+}
+
+@media (prefers-color-scheme: dark) {
+  .stock-indicator--low {
+    background: rgba(221, 107, 32, 0.15);
+  }
+
+  .stock-indicator--low .stock-indicator__number,
+  .stock-indicator--low .stock-indicator__status {
+    color: #f6ad55;
+  }
+
+  .stock-indicator__bar {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* ===== 書籍詳細 ===== */
+
+.book-detail {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin: 1rem 0 1.25rem;
+  box-shadow: var(--shadow-sm);
+  max-width: 520px;
+}
+
+.book-detail h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.book-detail p {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.book-detail p strong {
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+/* ===== 仮ページ ===== */
+
+.placeholder-page {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: var(--bg-card);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+}
+
+.placeholder-page p {
+  font-size: 1rem;
+}
+
+/* ===== フォーム（登録・編集画面） ===== */
+
+.page form {
+  max-width: 520px;
+  margin-top: 1.25rem;
+  padding: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.page form > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.page form label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.page form input[type="text"],
+.page form input[type="email"],
+.page form input[type="password"],
+.page form input[type="number"],
+.page form select,
+.page form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0.85rem;
+  font-size: 1rem;
+  font-family: inherit;
+  line-height: 1.5;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.page form input::placeholder,
+.page form textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
+.page form input:hover:not(:disabled):not(:focus-visible),
+.page form select:hover:not(:disabled):not(:focus-visible),
+.page form textarea:hover:not(:disabled):not(:focus-visible) {
+  border-color: var(--accent-border);
+}
+
+.page form input:focus-visible,
+.page form select:focus-visible,
+.page form textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+  background: var(--bg-card);
+}
+
+.page form input:disabled,
+.page form select:disabled,
+.page form textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--secondary-bg);
+}
+
+/* number 入力のスピナー調整 */
+.page form input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.page form input[type="number"]::-webkit-outer-spin-button,
+.page form input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.page form .page-status--error {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.page form .btn {
+  flex: none;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+}
+
+/* 詳細画面の貸出 select（フォーム外） */
+.book-detail .book-card__actions select,
+.book-card__actions select {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--text-h);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.book-detail .book-card__actions select:hover,
+.book-card__actions select:hover {
+  border-color: var(--accent-border);
+}
+
+.book-detail .book-card__actions select:focus-visible,
+.book-card__actions select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  .page form input[type="text"],
+  .page form input[type="email"],
+  .page form input[type="password"],
+  .page form input[type="number"],
+  .page form select,
+  .page form textarea {
+    background: var(--bg);
+  }
+
+  .page form input:focus-visible,
+  .page form select:focus-visible,
+  .page form textarea:focus-visible {
+    background: var(--bg-card);
+  }
+}

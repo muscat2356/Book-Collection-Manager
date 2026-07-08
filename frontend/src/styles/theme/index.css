@@ -1,0 +1,125 @@
+/* 図書館テーマ：落ち着いた色・読みやすさ重視 */
+:root {
+  --text: #4a5568;
+  --text-h: #1a2e1a;
+  --text-muted: #718096;
+  --bg: #f4f1ea;
+  --bg-card: #fffef9;
+  --border: #d4cfc4;
+  --code-bg: #ede8df;
+
+  /* 図書館グリーン */
+  --accent: #1e5c45;
+  --accent-hover: #164a37;
+  --accent-bg: rgba(30, 92, 69, 0.1);
+  --accent-border: rgba(30, 92, 69, 0.35);
+
+  /* サブ（返却・リンク） */
+  --secondary: #5c4d3c;
+  --secondary-bg: #f0ebe3;
+
+  /* 状態色 */
+  --success-bg: #e8f5e9;
+  --success-text: #2e7d32;
+  --danger-bg: #fce8e8;
+  --danger-text: #b71c1c;
+
+  --shadow-sm: 0 1px 3px rgba(26, 46, 26, 0.08);
+  --shadow-md: 0 4px 12px rgba(26, 46, 26, 0.12);
+  --shadow-lg: 0 12px 28px rgba(26, 46, 26, 0.16);
+
+  --header-bg: #2c2419;
+  --header-text: #f5f0e8;
+
+  --sans: 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  --heading: 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 16px/1.6 var(--sans);
+  color-scheme: light;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #c8cdd3;
+    --text-h: #e8ebe6;
+    --text-muted: #9aa3ad;
+    --bg: #1a1f1c;
+    --bg-card: #242b27;
+    --border: #3a4440;
+    --code-bg: #2a322e;
+
+    --accent: #4caf82;
+    --accent-hover: #3d9a6f;
+    --accent-bg: rgba(76, 175, 130, 0.15);
+    --accent-border: rgba(76, 175, 130, 0.4);
+
+    --secondary: #c4b8a8;
+    --secondary-bg: #2e3531;
+
+    --success-bg: rgba(46, 125, 50, 0.2);
+    --success-text: #81c784;
+    --danger-bg: rgba(183, 28, 28, 0.2);
+    --danger-text: #ef9a9a;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.45);
+
+    --header-bg: #141a17;
+    --header-text: #e8ebe6;
+  }
+}
+
+#root {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 1.75rem;
+  letter-spacing: 0.02em;
+  margin: 0 0 0.5rem;
+}
+
+h2 {
+  font-size: 1.125rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: var(--code-bg);
+  color: var(--text-h);
+}

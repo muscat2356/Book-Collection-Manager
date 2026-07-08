@@ -1,0 +1,38 @@
+---
+description: LibraShare フロントエンド規約（React / Router / API）
+globs: frontend/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# フロントエンド規約
+
+## 構成
+
+```
+src/
+├── api/          # axios クライアント、books/users/loans
+├── auth/         # Keycloak 初期化、AuthContext
+├── components/   # Layout, ProtectedRoute, BookCard 等
+├── pages/        # 画面単位（9 ルート）
+├── types/        # Book, User, Loan, Page
+└── App.tsx       # ルーティングのみ
+```
+
+## ルート（確定）
+
+`/login`, `/books`, `/books/:id`, `/books/new`, `/books/:id/edit`,
+`/users`, `/users/new`, `/users/:id/edit`, `/loans/active`
+
+## パターン
+
+- ページ: `useEffect` で取得 → `loading` / `error` / `data` の 3 状態
+- API: `api/client.ts` の interceptor で Bearer JWT 付与
+- ロール: JWT から `general_employee` / `admin_employee` を判定し Layout ナビを出し分け
+- 貸出: `POST /api/loans`（bookId + userId）。返却: `PUT /api/loans/{id}/return`
+- 削除: 409（例: USER_HAS_ACTIVE_LOANS）を画面内で表示
+
+## 参照
+
+- `docs/screen-transition.md` — 画面遷移
+- `docs/openapi-notes.md` — API 契約
+- `docs/frontend-gap-analysis.md` — 現状との差分

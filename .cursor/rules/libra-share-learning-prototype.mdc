@@ -1,0 +1,28 @@
+---
+description: 学習用プロトタイプ（my-react-app）向けルール
+globs: "**/*"
+alwaysApply: false
+---
+
+# 学習プロトタイプ（my-react-app）向け
+
+別リポジトリ `react-handson/my-react-app` を触る場合の補足。本番コードは `LibraShare/frontend/` が正。
+
+## 位置づけ
+
+- `react-handson/my-react-app` は Phase 1 学習成果物（移行済み）
+- 確定設計は `LibraShare/docs/` が正
+- 本番フロントは `LibraShare/frontend/` で開発する
+
+## プロトタイプから除外するもの（本番移行時）
+
+- `MemberCard.tsx`, `mockMembers.ts`, `types/member.ts`（学習用・存在する場合）
+- `/loans/me` ルートと `MyLoransPage.tsx`
+
+## Agent への依頼
+
+実装は本人が行う。差分は `docs/frontend-gap-analysis.md` を参照。
+
+## ルールの同期
+
+AI 規定（`AGENTS.md`, `.cursor/rules/`）の正は **LibraShare ルート**。変更した場合は my-react-app 側も揃える。

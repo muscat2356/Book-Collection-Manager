@@ -1,0 +1,29 @@
+---
+description: LibraShare プロジェクト共通ルール（チーム分担・MVP・開発フロー）
+alwaysApply: true
+---
+
+# LibraShare 共通ルール
+
+## 言語
+
+常に日本語で回答。コードコメントも日本語。
+
+## 開発フロー
+
+学習 → 共有 → 設計 → 実装。設計の正は `docs/` と `README.md`。
+
+## スコープ
+
+- MVP-A のみがコミットライン。MVP-B（F-03/F-11/F-10）は余力時。
+- `/loans/me` は廃止。貸出中一覧は `/loans/active`。
+- 利用者管理の対象は `general_user` のみ。社員は Keycloak コンソール管理。
+
+## Member B（フロント）依頼時
+
+- 実装は本人が手で行う。Agent は差分整理・設計確認・デバッグ支援を優先し、大規模な下書き生成は避ける。
+- 機能 ID（F-01 等）または `docs/frontend-gap-analysis.md` を参照して依頼する。
+
+## 権限
+
+フロントは UI 出し分け + 403 表示。セキュリティの正は Spring API + JWT RBAC。
