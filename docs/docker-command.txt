@@ -20,3 +20,8 @@ docker compose down
 docker compose exec postgres psql -U postgres -d libra
 
 docker compose up -d --build postgres keycloak backend
+
+chmod +x docker/keycloak/init/01-create-keycloak-db.sh
+
+docker compose down -v
+docker compose up postgres keycloak
