@@ -14,7 +14,7 @@
 
 | 項目 | 内容 |
 |------|------|
-| バックエンド | Spring Boot 3.x + Java 21（Member A） |
+| バックエンド | Spring Boot 4.1.0 + Java 21（Member A） |
 | フロントエンド | React + TypeScript + Vite（Member B） |
 | 認証 | Keycloak（OIDC / JWT） |
 | DB | PostgreSQL |

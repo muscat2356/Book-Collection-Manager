@@ -11,7 +11,7 @@
 | 想定利用者 | 一般ユーザー / 一般社員 / 管理社員 |
 | 開発フロー | **学習 → 共有 → 設計 → 実装** |
 | 構成 | API + SPA 分離 |
-| バックエンド | Spring Boot 3.x + **Java 21** |
+| バックエンド | Spring Boot **4.1.0** + **Java 21** |
 | フロントエンド | React + TypeScript + Vite |
 | 認証 | Keycloak（Docker / OIDC / JWT） |
 | インフラ | Docker Compose |
@@ -114,7 +114,7 @@
 ### Backend（Spring Boot 3.x + Java 21）
 
 - `spring-boot-starter-web` — REST API
-- `spring-boot-starter-jdbc` + `JdbcTemplate`
+- `spring-boot-starter-jpa` + `JdbcTemplate`
 - `spring-boot-starter-security` + `spring-boot-starter-oauth2-resource-server`
 - Flyway — DB マイグレーション
 - springdoc-openapi — Swagger UI / OpenAPI 3
@@ -133,7 +133,7 @@
 
 | レイヤ | 技術 |
 |--------|------|
-| Backend | Java 21, Spring Boot 3.x, Spring JDBC, Spring Security, OAuth2 Resource Server |
+| Backend | Java 21, Spring Boot 3.x, Spring JPA, Spring Security, OAuth2 Resource Server |
 | Frontend | React, TypeScript, Vite, Keycloak JS Adapter |
 | DB | PostgreSQL 15+ |
 | Auth | Keycloak |
