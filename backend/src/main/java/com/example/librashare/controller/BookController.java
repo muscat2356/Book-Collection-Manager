@@ -1,6 +1,7 @@
 package com.example.librashare.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,5 +28,14 @@ public class BookController {
 
         return ResponseEntity.ok(books);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Optional<Book>> findById(Long id){
+        Optional<Book> book = bookService.findById(id);
+
+        return ResponseEntity.ok(book);
+    }
+
+
 
 }

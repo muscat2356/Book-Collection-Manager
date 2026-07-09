@@ -1,6 +1,7 @@
 package com.example.librashare.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,10 @@ public class BookService {
 
     public List<Book> findAll() {
        return bookRepository.findAll();
+    }
+
+    public Optional<Book> findById(Long id) {
+        return bookRepository.findById(id);
     }
 
 
