@@ -3,6 +3,7 @@ package com.example.librashare.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,12 +24,14 @@ public class BookController {
 
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('general_employee','admin_employee')")
     public ResponseEntity<List<Book>> findAll(){
         List<Book> books = bookService.findAll();
         return ResponseEntity.ok(books);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('general_employee','admin_employee')")
     public ResponseEntity<Book> findById(@PathVariable Long id){
         return bookService.findById(id)
                 .map(book -> ResponseEntity.ok(book))
