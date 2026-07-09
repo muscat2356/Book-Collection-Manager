@@ -1,5 +1,1 @@
-.env
-.memo
-
-# Keycloak realm export
-docker/keycloak/import/LibraShare-realm.json
+cd
