@@ -5,6 +5,8 @@ import type { User } from "../types/User"
 import type React from "react"
 import { useState } from "react"
 import { createLoan } from "../api/loans"
+import { useAuth } from "../auth/AuthContext"
+import { isAdmin } from "../auth/roles"
 
 type BookDetailProps = {
     book: Book
@@ -14,6 +16,7 @@ type BookDetailProps = {
 export function BookDetail({ book, users } : BookDetailProps) {
 
     const navigate = useNavigate();
+    const {keycloak} = useAuth();
     const [selectedUserId, setSelectedUserId] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
@@ -54,10 +57,12 @@ export function BookDetail({ book, users } : BookDetailProps) {
             </div>
             {error && (
                   <p className="page-status page-status--error">{error}</p>
-                )}            
+                )}
+            {isAdmin(keycloak) && (      
             <Link to={`/books/${book.id}/edit`} className="book-card__link">
                 編集
             </Link>
+            )}
 
         </article>
     )

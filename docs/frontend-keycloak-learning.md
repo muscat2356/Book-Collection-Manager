@@ -24,11 +24,11 @@ LibraShare のフロントは **keycloak-js**（Keycloak JavaScript Adapter）�
 
 | 状態 | 挙動 |
 |------|------|
-| 未ログイン | 保護ルート → `/login` へ誘導（今後 `ProtectedRoute` で実装） |
+| 未ログイン | `ProtectedRoute` から Keycloak ログイン画面（外部）へ誘導（`keycloak.login()`） |
 | ログイン済み + 社員ロールあり | SPA 利用可（`general_employee` / `admin_employee`） |
-| ログイン済み + `general_user` のみ | 認証は通るが SPA 利用不可 → アクセス拒否画面 |
+| ログイン済み + `general_user` のみ | 認証は通るが SPA 利用不可 → `/access-denied` |
 
-ロールは JWT の `realm_access.roles` から判定します（次フェーズ）。
+ロールは JWT の `realm_access.roles` から `auth/roles.ts` で判定します。
 
 ---
 
@@ -48,11 +48,21 @@ Docker の frontend コンテナ（`node:20-alpine`）だけ使う場合は、�
 
 ```env
 VITE_KEYCLOAK_URL=http://localhost:8080
-VITE_KEYCLOAK_REALM=library-realm
-VITE_KEYCLOAK_CLIENT_ID=librashare-frontend
+VITE_KEYCLOAK_REALM=LibraShare
+VITE_KEYCLOAK_CLIENT_ID=front-client
 ```
 
-`docker-compose.yml` のバックエンドは `KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/library-realm` を参照しています。Realm 名はこれと揃えます。
+`docker-compose.yml` のバックエンドは `KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/LibraShare` を参照しています。Realm 名・クライアント ID は import（`docker/keycloak/import/LibraShare-realm.json`）と揃えます。
+
+### テストユーザー（Keycloak import）
+
+| ユーザー名 | ロール | SPA 利用 |
+|------------|--------|----------|
+| `admin_test@example.com` | `admin_employee` | 可 |
+| `employee_test@example.com` | `general_employee` | 可 |
+| `user_test@example.com` | `general_user` | 不可（`/access-denied`） |
+
+パスワードは realm JSON にはハッシュのみ。Keycloak 管理コンソール（`admin` / `admin`）で確認・再設定します。
 
 ### Keycloak クライアント設定（Member A と要確認）
 
@@ -65,7 +75,7 @@ VITE_KEYCLOAK_CLIENT_ID=librashare-frontend
 | Web origins | `http://localhost:5173` |
 | Realm roles | `general_user`, `general_employee`, `admin_employee` |
 
-`docs/` には Keycloak Realm の export JSON はまだありません。設定は管理コンソールまたは Member A のメモを正とします。
+`docs/` の Keycloak 設定の正は `docker/keycloak/import/LibraShare-realm.json` です。
 
 ---
 
@@ -249,31 +259,30 @@ useEffect(() => {
 
 ---
 
-## 7. レビューで挙がった改善点（未対応・次フェーズ）
+## 7. 実装状況（F-01）
 
 | 項目 | 状態 | メモ |
 |------|------|------|
-| `initPromise` による二重 init 防止 | 済 | 上記 §5 |
-| `.catch` でのエラーハンドリング | 済 | 上記 §6 |
-| `main.tsx` への `KeycloakProvider` 接続 | 未 | 次の作業 |
-| 初期化中のローディング UI | 未 | `!isInitialized` の間表示 |
-| `login()` / `logout()` の Context 提供 | 未 | `LoginPage` / `Layout` で使用 |
-| ロール判定（`general_employee` 等） | 未 | JWT `realm_access.roles` |
-| `ProtectedRoute` | 未 | 未ログイン → `/login` |
-| `AccessDeniedPage` | 未 | `general_user` 拒否 UX |
-| `api/client.ts` の Bearer 注入 | 未 | `localStorage` → `keycloak.token` |
-| トークン更新（`updateToken`） | 未 | API 呼び出し前に実施 |
+| `initPromise` による二重 init 防止 | 済 | §5 |
+| `.catch` でのエラーハンドリング | 済 | §6 |
+| `main.tsx` への `KeycloakProvider` 接続 | 済 | |
+| 初期化中のローディング UI | 済 | `ProtectedRoute` / `AccessDeniedPage` |
+| `logout()`（Layout / AccessDeniedPage） | 済 | `keycloak.logout()` |
+| ロール判定（`auth/roles.ts`） | 済 | JWT `realm_access.roles` |
+| `ProtectedRoute` | 済 | 未ログイン → `keycloak.login()` |
+| `AccessDeniedPage` | 済 | `general_user` 拒否 UX |
+| Layout / BookDetail の admin 出し分け | 済 | `isAdmin` |
+| `api/client.ts` の Bearer 注入 | 未 | F-02 前に対応 |
+| トークン更新（`updateToken`） | 未 | 余力 |
 
 ---
 
 ## 8. 次の実装ステップ（参考）
 
-1. `main.tsx` に `<KeycloakProvider>` を追加
-2. `!isInitialized` の間はローディング表示
-3. Context に `login()` / `logout()` を追加
-4. `ProtectedRoute` + `AccessDeniedPage`
-5. `api/client.ts` で `keycloak.token` を注入
-6. `Layout` のロール別ナビ出し分け
+1. `api/client.ts` で `keycloak.token` を注入
+2. 蔵書 API 接続（F-02）
+3. 利用者管理 API（F-06）
+4. 貸出/返却 API（F-04）→ 貸出中一覧（F-05）
 
 ---
 
@@ -282,9 +291,13 @@ useEffect(() => {
 | ファイル | 役割 |
 |----------|------|
 | `frontend/src/auth/AuthContext.tsx` | Keycloak 保持・初期化・Context |
+| `frontend/src/auth/roles.ts` | ロール判定 |
+| `frontend/src/components/ProtectedRoute.tsx` | 認証・認可ガード |
+| `frontend/src/pages/AccessDeniedPage.tsx` | `general_user` 拒否画面 |
 | `frontend/.env.development` | `VITE_KEYCLOAK_*` |
-| `frontend/src/main.tsx` | Provider 接続予定 |
-| `frontend/src/api/client.ts` | Bearer 注入予定 |
+| `frontend/src/main.tsx` | `KeycloakProvider` 接続 |
+| `frontend/src/api/client.ts` | Bearer 注入（未: Keycloak 化） |
+| `docker/keycloak/import/LibraShare-realm.json` | Realm・クライアント・テストユーザー |
 | `docker-compose.yml` | Keycloak / backend の issuer URI |
 
 ---
@@ -299,3 +312,275 @@ useEffect(() => {
 | `access_token` | API 呼び出しに使う JWT |
 | `realm_access.roles` | JWT 内のロール一覧（社員判定に使用） |
 | `initPromise` | init の二重実行を防ぐための共有 Promise |
+
+---
+
+## 11. 実装セッション Q&A まとめ（2026-07-09）
+
+F-01 実装中に発生した質問と回答を、設計判断・実装・トラブルシュートの順に整理したものです。
+
+---
+
+### 11.1 設計: `/login` SPA ルートは要るか
+
+**Q:** Keycloak の既存ログイン画面を使うなら `LoginPage.tsx` は不要では？`ProtectedRoute` で未ログイン時に `keycloak.login()` を呼べばよいのでは？
+
+**A:** その方針で問題ない。SPA に `/login` ルートを設けず、未ログイン検知時に `keycloak.login()` で Keycloak 外部画面へ遷移するのは一般的なパターン。
+
+**Q:** README 設計では `/login` はなかったのでは？
+
+**A:** ドキュメント間で不整合があった。
+
+- `docs/screen-transition.md` は当初 `/login` を SPA ルートとして記載
+- `README.md` は「ログイン画面」の存在は示すが `/login` パスは明示していなかった
+
+**採用した整理:**
+
+- 画面遷移図の「ログイン」は **Keycloak ログイン画面（外部）** と定義
+- SPA ルート一覧から `/login` を除外
+- 未ログイン時は `ProtectedRoute` が `keycloak.login()` を呼ぶ
+
+→ `docs/screen-transition.md` をこの方針で更新済み。
+
+---
+
+### 11.2 実装の流れ（F-01）
+
+**現状確認時点でできていたこと:**
+
+- `KeycloakProvider`（`main.tsx`）
+- `AuthContext`（`check-sso` + PKCE）
+- 各ページ骨格・mock API
+
+**F-01 で実装したこと:**
+
+| ファイル | 役割 |
+|----------|------|
+| `auth/roles.ts` | JWT ロール判定（`isEmployee` / `isAdmin`） |
+| `components/ProtectedRoute.tsx` | 認証・認可ガード |
+| `pages/AccessDeniedPage.tsx` | `general_user` 拒否 |
+| `App.tsx` | ルート保護・`requireAdmin` |
+| `Layout.tsx` | ロール別ナビ・ログアウト |
+| `BookDetail.tsx` | 編集リンクの admin 出し分け |
+
+**F-01 完了判定（SPA 認証・認可）:** 完了可。`api/client.ts` の JWT 注入は F-02 前のフォローアップ。
+
+---
+
+### 11.3 Context と `useAuth()`
+
+**Q:** `useAuth()` で取り出せるのは、App が Context で包まれているから？
+
+**A:** 正しい。
+
+```
+main.tsx: KeycloakProvider → App → ProtectedRoute / Layout / Page
+                                      └ useAuth() で同じ value を参照
+```
+
+`KeycloakProvider` がマウントされたときに `init()` が走り、子孫コンポーネントは `useAuth()` で `keycloak` / `isAuthenticated` / `isInitialized` を読める。
+
+---
+
+### 11.4 トークンの保持場所とタイミング
+
+**Q:** Context の中にトークンなどの情報も保持している？
+
+**A:** 半分正しい。Context が直接持つのは次の3つだけ。
+
+- `keycloak`（インスタンスへの参照）
+- `isAuthenticated`
+- `isInitialized`
+
+**トークン文字列は Context の state には入らない。** `keycloak-js` が `keycloakInstance` 内部に保持する。
+
+| 取り出し方 | 内容 |
+|------------|------|
+| `keycloak.token` | access_token（API の Bearer に使う） |
+| `keycloak.tokenParsed` | デコード済み JWT（`realm_access.roles` 等） |
+| `keycloak.refreshToken` | 更新用トークン |
+
+**ログイン成功後の流れ:**
+
+```
+keycloak.login() → Keycloak 外部画面で認証 → redirectUri へ戻る
+  → アプリ再読み込み → keycloak.init() が code を token に交換
+  → keycloak.token / tokenParsed がインスタンスにセット
+  → init が true → isAuthenticated=true
+```
+
+アプリ側が「トークンを Context に set する」処理はない。`keycloak-js` が担う。
+
+---
+
+### 11.5 Keycloak 初期化はいつ走るか
+
+**Q:** `<KeycloakProvider>` で包んでいる App 内では常に初期化が走る？
+
+**A:** 「App 内だから常に」ではなく **Provider マウント時に1回**（login 後のページ再読み込み時も1回）。
+
+| タイミング | init 実行 |
+|------------|-----------|
+| 初回ページ読み込み | はい |
+| SPA 内ルート遷移（`/books` → `/users`） | いいえ |
+| `keycloak.login()` 後のリダイレクト戻り | はい |
+
+`initPromise` により、同一ページ内での `keycloak.init()` 二重呼び出しは防いでいる。
+
+---
+
+### 11.6 `ProtectedRoute` の動き
+
+**Q:** `useEffect` が Context の値が変わるたびに発火し、認証がなければ login、確認中はフラグに応じて表示を変え、問題なければ子ルートを描画する流れで合っているか？
+
+**A:** 概ね正しい。ただし **useEffect の `return` と render の `return` は別物**。
+
+| 担当 | 処理 |
+|------|------|
+| `useEffect` | 副作用。未ログインなら `keycloak.login()` を呼ぶ（レンダー中に呼ばない） |
+| render の `if` + `return` | 画面表示（ローディング / 拒否 / `<Outlet />`） |
+
+**判定の流れ:**
+
+```
+1. !isInitialized → 「認証状態を確認中...」
+2. !isAuthenticated → useEffect が login()、「ログイン画面へ移動中...」
+3. !isEmployee → /access-denied
+4. requireAdmin && !isAdmin → /access-denied
+5. それ以外 → <Outlet />
+```
+
+**実装時にハマった点:**
+
+- `useEffect` 内: `if (!isAuthenticated) return` は **逆**。正しくは `if (isAuthenticated) return` のあと `login()`
+- render 内: `if (!isAuthenticated)` で「ログイン画面へ移動中...」（`if (isAuthenticated)` だと逆）
+- 最後に `return <Outlet />` が必要
+
+---
+
+### 11.7 `requireAdmin` プロップ
+
+**Q:** `requireAdmin` は管理者限定ルートかどうかのフラグで、`true` かつ管理者ロールがなければ閲覧不可ページへ飛ばす認識で合っているか？
+
+**A:** 正しい。
+
+| requireAdmin | ロール | 結果 |
+|:------------:|--------|------|
+| `false` | `general_employee` | 通過 |
+| `false` | `admin_employee` | 通過 |
+| `true` | `general_employee` | `/access-denied` |
+| `true` | `admin_employee` | 通過 |
+| どちらでも | `general_user` のみ | `/access-denied`（社員チェックで先に弾かれる） |
+
+**TypeScript の注意:** `requireAdmin: boolean`（必須）のまま `<ProtectedRoute />` と書くと型エラー。`requireAdmin?: boolean` にする。
+
+---
+
+### 11.8 ログアウトと `redirectUri`
+
+**実装:** `Layout` / `AccessDeniedPage` で `keycloak.logout({ redirectUri: window.location.origin })`
+
+**Q:** `redirectUri: window.location.origin` はもともと window が見ていた場所へリダイレクト？
+
+**A:** 厳密には **サイトの起点（オリジン）** に戻る。パスは含まない。
+
+| 現在の URL | `origin` |
+|------------|----------|
+| `http://localhost:5173/books/1` | `http://localhost:5173` |
+
+ログアウト後は未ログイン状態になり、`ProtectedRoute` が再度 Keycloak ログインへ誘導する。
+
+**ログアウトボタンの CSS:** `<button class="nav-link">` はブラウザデフォルトスタイルが残るため、`button.nav-link` でリセットが必要（`theme/app.css` に追記済み）。
+
+---
+
+### 11.9 Docker / Keycloak 起動トラブル
+
+**症状:** Keycloak 起動時に `Role "keycloak" does not exist` → DB 接続失敗。
+
+**原因:** `docker/keycloak/init/01-create-keycloak-db.sh` は Postgres **初回初期化時のみ**実行される。既存の `postgres_data` ボリュームがあるとスクリプトが走らず、`keycloak` ロールが作られない。
+
+**解決策:**
+
+```bash
+docker compose down -v   # 開発環境で DB 初期化してよい場合
+docker compose up --build
+```
+
+または Postgres に手動で `keycloak` ユーザー・DB を作成。
+
+**env の不一致（別件）:** 当初 `.env.development` が `library-realm` / `librashare-frontend` だったが、import の正は `LibraShare` / `front-client`。
+
+---
+
+### 11.10 テストユーザーの確認場所
+
+| 確認先 | 内容 |
+|--------|------|
+| `docker/keycloak/import/LibraShare-realm.json` | ユーザー名・ロール（パスワードはハッシュのみ） |
+| Keycloak 管理コンソール（`admin` / `admin`） | パスワードの確認・再設定 |
+| Realm: `LibraShare` | |
+
+---
+
+### 11.11 F-01 完了レビュー（チェックリスト）
+
+**手動テスト:**
+
+- [ ] 未ログインで `/books` → Keycloak ログイン画面
+- [ ] `employee_test@example.com` → 業務画面 OK、`/books/new` は拒否
+- [ ] `admin_test@example.com` → 蔵書追加・編集 OK
+- [ ] `user_test@example.com` → `/access-denied` + ログアウト可能
+- [ ] ヘッダーからログアウト → 未ログイン状態に戻る
+
+**軽微な改善候補（コード）:**
+
+- `Layout.tsx` の未使用 `import keycloak from 'keycloak-js'` 削除
+- `roles.ts` の optional chaining: `keycloak?.tokenParsed?.realm_access?.roles`
+
+**フォローアップ（F-02 前）:**
+
+- `api/client.ts` の `localStorage` → `keycloak.token`
+
+---
+
+### 11.12 Agent 向け「実装」依頼の進め方（ルール）
+
+`AGENTS.md` / `.cursor/rules/libra-share-project.mdc` に追記済み。
+
+1. **現状のコードを確認**（docs + 実装）
+2. **次タスクを提示**
+3. **写経コード + 解説**（機能・依存ライブラリ・データの流れを中心に。宣言の書き方の説明は不要）
+
+---
+
+### 11.13 データの流れ（F-01 全体）
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant SPA as React SPA
+    participant PR as ProtectedRoute
+    participant KC as Keycloak
+    participant API as Spring API
+
+    User->>SPA: /books にアクセス
+    SPA->>PR: ルートガード
+    alt 未初期化
+        PR-->>User: 認証状態を確認中...
+    else 未ログイン
+        PR->>KC: keycloak.login()
+        KC-->>User: ログイン画面
+        User->>KC: 認証
+        KC-->>SPA: redirect + code
+        SPA->>KC: init() → token 取得
+    end
+    PR->>PR: isEmployee / isAdmin 判定
+    alt general_user
+        PR-->>User: /access-denied
+    else 社員ロールあり
+        PR-->>User: 業務画面表示
+        Note over SPA,API: F-02 以降: keycloak.token で API 呼び出し
+    end
+```
+
