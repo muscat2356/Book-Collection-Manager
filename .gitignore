@@ -16,3 +16,6 @@ build/
 
 # OS
 .DS_Store
+
+# Keycloak realm export
+docker/keycloak/import/LibraShare-realm.json
