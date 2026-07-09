@@ -5,12 +5,14 @@ interface KeycloakContextType {
     keycloak: Keycloak | null
     isAuthenticated: boolean
     isInitialized: boolean
+    getAccessToken: (minValiditySeconds?: number) => Promise<string | null>
 }
 
 const KeycloakContext = createContext<KeycloakContextType>({
     keycloak: null,
     isAuthenticated: false,
-    isInitialized: false
+    isInitialized: false,
+    getAccessToken: async () => null,
 });
 
 const keycloakInstance = new Keycloak({
@@ -47,9 +49,21 @@ useEffect(() => {
     })
 }, [])
 
+async function getAccessToken(minValiditySeconds: number = 30): Promise<string | null>{
+    if(!isInitialized) return null;
+    if(!keycloakInstance.authenticated) return null
+
+    try {
+        await keycloakInstance.updateToken(minValiditySeconds)
+        return keycloakInstance.token ?? null
+    } catch {
+        return null
+    }
+}
+
 return(
     <KeycloakContext.Provider
-     value={{keycloak: keycloakInstance, isAuthenticated, isInitialized}}>
+     value={{keycloak: keycloakInstance, isAuthenticated, isInitialized, getAccessToken }}>
         {children}
      </KeycloakContext.Provider>
 );
