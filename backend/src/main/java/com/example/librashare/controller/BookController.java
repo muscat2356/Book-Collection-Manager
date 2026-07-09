@@ -1,10 +1,10 @@
 package com.example.librashare.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,20 +22,17 @@ public class BookController {
     }
 
 
-    @GetMapping("")
+    @GetMapping
     public ResponseEntity<List<Book>> findAll(){
         List<Book> books = bookService.findAll();
-
         return ResponseEntity.ok(books);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Optional<Book>> findById(Long id){
-        Optional<Book> book = bookService.findById(id);
-
-        return ResponseEntity.ok(book);
+    public ResponseEntity<Book> findById(@PathVariable Long id){
+        return bookService.findById(id)
+                .map(book -> ResponseEntity.ok(book))
+                .orElse(ResponseEntity.notFound().build());
     }
-
-
 
 }
