@@ -1,1 +1,18 @@
-cd
+# 機密
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+
+# メモ
+docs/.memo
+
+# Java / Gradle / Maven
+target/
+build/
+*.jar
+
+# OS
+.DS_Store
