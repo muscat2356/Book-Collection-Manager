@@ -10,10 +10,6 @@ export type CreateBookRequest = {
 
 export type UpdateBookRequest = CreateBookRequest
 
-type BookPageResponse = {
-    content: Book[]
-}
-
 function toErrorMessage(err: unknown): string {
     if(isAxiosError(err)) {
         if(err.response?.status === 403) return "権限がありません"
