@@ -1,5 +1,21 @@
+# 機密
 .env
-.memo
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+
+# メモ
+docs/.memo
+
+# Java / Gradle / Maven
+target/
+build/
+*.jar
+
+# OS
+.DS_Store
 
 # Keycloak realm export
 docker/keycloak/import/LibraShare-realm.json
