@@ -1,5 +1,5 @@
 export type User = {
-    id : string;
+    id : number;
     keycloakSub : string;
     displayName : string;
     email : string;
