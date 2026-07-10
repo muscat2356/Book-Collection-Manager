@@ -5,15 +5,15 @@ import { mockUsers } from "../data/mockUsers"
 import type { Loan } from "../types/Loan"
 
 export type ActiveLoan = {
-    id: string
-    book: { id: string, title: string, author: string }
+    id: number
+    book: { id: number, title: string, author: string }
     user: { id: string, displayName: string }
     borrowedAt: string
     returnedAt: null
     status: 'BORROWED'
 }
 
-export async function createLoan(bookId: string, userId: string): Promise<Loan>{ 
+export async function createLoan(bookId: number, userId: string): Promise<Loan>{ 
     await new Promise((r) => setTimeout(r, 500))
 
     const book = mockBooks.find((b) => b.id === bookId)
@@ -27,7 +27,7 @@ export async function createLoan(bookId: string, userId: string): Promise<Loan>{
         book.stockCount -= 1
 
     const newLoan: Loan = {
-        id: String(mockLoans.length + 1),
+        id: Number(mockLoans.length + 1),
         bookId: bookId,
         userId: userId,
         borrowedAt: Date().toString(),
@@ -39,7 +39,7 @@ export async function createLoan(bookId: string, userId: string): Promise<Loan>{
     return newLoan
 }
 
-export async function returnLoans(loanId:string) {
+export async function returnLoans(loanId:number) {
     const loan = mockLoans.find((l) => l.id === loanId)
     if(!loan) throw new Error('貸し出し履歴がありません');
     

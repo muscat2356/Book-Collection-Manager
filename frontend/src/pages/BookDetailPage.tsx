@@ -5,9 +5,11 @@ import type { User } from '../types/User'
 import { fetchBookById } from '../api/books'
 import { BookDetail } from '../components/BookDetail'
 import { fetchUsers } from '../api/users'
+import { useApiClient } from '../api/ApiClientContext'
 
 export function BookDetailPage() {
   const { id } = useParams()
+  const apiClient = useApiClient()
   const [book, setBook] = useState<Book | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +23,7 @@ export function BookDetailPage() {
     }
 
     Promise.all([
-      fetchBookById(id),
+      fetchBookById(apiClient, id),
       fetchUsers()
     ])
     .then(([bookData, userData]) => {
@@ -33,7 +35,7 @@ export function BookDetailPage() {
     .finally(() => {
       setLoading(false);
     });
-  }, [id])
+  }, [id, apiClient])
 
   if (loading) {
     return <p className="page-status">読み込み中...</p>
