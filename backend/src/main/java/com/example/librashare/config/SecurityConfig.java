@@ -12,7 +12,12 @@ import org.springframework.security.web.SecurityFilterChain;
 import com.example.librashare.security.JwtAuthConverter;
 
 
-
+/**
+ * @author furuyama
+ * @since 2026-07-10
+ * @see 
+ * JwtAuthConverter
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -25,6 +30,16 @@ public class SecurityConfig {
         this.jwtAuthConverter = jwtAuthConverter;
     }
 
+    /**
+     * セキュリティフィルターチェーンの構成
+     * 
+     * セッションをステートレス管理し、CSRF保護を無効化し、
+     * 全てのリクエストに認証を要求する。認可はOAuth2.0のリソースサーバーで
+     * JWT検証を実施
+     * @param http　
+     * @return　構成済みのSecurityFilterChainをリターン
+     * @throws Exception 構成失敗時に例外発生
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http
