@@ -20,8 +20,10 @@ src/
 
 ## ルート（確定）
 
-`/login`, `/books`, `/books/:id`, `/books/new`, `/books/:id/edit`,
-`/users`, `/users/new`, `/users/:id/edit`, `/loans/active`
+SPA ルート: `/books`, `/books/:id`, `/books/new`, `/books/:id/edit`,
+`/users`, `/users/new`, `/users/:id/edit`, `/loans/active`, `/access-denied`
+
+未ログイン時のログインは SPA ルートではなく Keycloak 外部画面（`keycloak.login()`）。
 
 ## パターン
 

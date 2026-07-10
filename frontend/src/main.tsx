@@ -1,6 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
+import { KeycloakProvider } from './auth/AuthContext.tsx'
+import { ApiClientProvider } from './api/ApiClientContext.tsx'
 
 // 練習用 / フルテーマの切り替え（.env.development の VITE_USE_FULL_THEME）
 if (import.meta.env.VITE_USE_FULL_THEME === 'true') {
@@ -12,6 +14,10 @@ if (import.meta.env.VITE_USE_FULL_THEME === 'true') {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <KeycloakProvider>
+      <ApiClientProvider>
+        <App />
+      </ApiClientProvider>
+    </KeycloakProvider>
   </StrictMode>,
 )

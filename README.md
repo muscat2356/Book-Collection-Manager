@@ -50,7 +50,7 @@
 | F-06 | 利用者登録・更新・削除 | Keycloak Admin API 連携, `users` テーブル連携 | 利用者管理画面 |
 | F-07 | `docker compose up` | Compose 全体 | フロント dev 手順 |
 
-- [ ] F-01 Keycloak ログイン（ロール: `general_user` / `general_employee` / `admin_employee`）
+- [x] F-01 Keycloak ログイン（ロール: `general_user` / `general_employee` / `admin_employee`）— フロント SPA 認証・認可済み。API Bearer 注入は F-02 前
 - [ ] F-02 蔵書一覧・詳細表示
 - [ ] F-02a 蔵書追加（管理社員のみ）
 - [ ] F-02b 蔵書更新（管理社員のみ）
@@ -358,17 +358,19 @@ npm run dev
 | サービス | URL（例） |
 |----------|-----------|
 | Frontend | http://localhost:5173 |
-| API | http://localhost:8080 |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| Keycloak | http://localhost:8080/auth （要設定確認） |
+| API | http://localhost:8081 |
+| Swagger UI | http://localhost:8081/swagger-ui.html |
+| Keycloak | http://localhost:8080 |
 
-## デモアカウント（予定）
+## デモアカウント（Keycloak `LibraShare` realm）
+
+テストユーザーは `docker/keycloak/import/LibraShare-realm.json` で import されます。パスワードは Keycloak 管理コンソール（`admin` / `admin`）で確認・再設定してください。
 
 | ロール | ユーザー名 | 用途 |
 |--------|------------|------|
-| `admin_employee` | `admin_employee` | 蔵書追加・更新・削除、利用者管理、貸出・返却 |
-| `general_employee` | `general_employee` | 蔵書一覧・詳細、利用者管理、貸出・返却 |
-| `general_user` | `general_user` | 貸出対象の利用者サンプル |
+| `admin_employee` | `admin_test@example.com` | 蔵書追加・更新・削除、利用者管理、貸出・返却 |
+| `general_employee` | `employee_test@example.com` | 蔵書一覧・詳細、利用者管理、貸出・返却 |
+| `general_user` | `user_test@example.com` | 貸出対象の利用者サンプル（SPA 利用不可） |
 
 ---
 
