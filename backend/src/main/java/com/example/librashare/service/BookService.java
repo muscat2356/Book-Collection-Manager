@@ -51,7 +51,13 @@ public class BookService {
      * @return　Response 201　作成した書籍の情報を送信
      */
     public Long createBook(BookRequest request) {
-        Book book = new Book(null, request.getTitle(), request.getAuthor(), request.getIsbn(), request.getStockCount(), null);
+        Book book = new Book();
+        
+        book.setTitle(request.getTitle());
+        book.setAuthor(request.getAuthor());
+        book.setIsbn(request.getIsbn());
+        book.setStockCount(request.getStockCount());
+
         Book saved = bookRepository.save(book);
         return saved.getId();
     }
