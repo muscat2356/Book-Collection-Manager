@@ -41,6 +41,7 @@ public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationTo
      */
     @Override
     public AbstractAuthenticationToken convert(@NonNull Jwt jwt){
+        
         //2つの場所から権限を集めて、1つにまとめる
 
         //jwtGrantedAuthoritiesConverter.convert(jwt)で`scope`クレームの権限取得
