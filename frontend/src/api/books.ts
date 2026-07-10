@@ -26,10 +26,8 @@ function toErrorMessage(err: unknown): string {
 
 export async function fetchBooks(apiClient: AxiosInstance): Promise<Book[]> {
     try {
-        const response = await apiClient.get<BookPageResponse>("/api/books", {
-            params:{ page: 0, size: 100 },
-        })
-        return response.data.content
+        const response = await apiClient.get<Book[]>("/api/books")
+        return response.data
     } catch (err) {
         throw new Error(toErrorMessage(err))
         

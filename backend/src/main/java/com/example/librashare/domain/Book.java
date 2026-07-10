@@ -46,7 +46,8 @@ public class Book {
     @Column(name = "created_at", nullable = false,  updatable = false, insertable = false)
     private OffsetDateTime createdAt;
 
-    
+    public Book() {
+    }
 
     public Book(Long id, String title, String author, String isbn, int stockCount, OffsetDateTime createdAt) {
         this.id = id;
