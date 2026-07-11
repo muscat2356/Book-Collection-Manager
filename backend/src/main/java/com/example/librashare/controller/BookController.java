@@ -1,6 +1,7 @@
 package com.example.librashare.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -79,5 +80,25 @@ public class BookController {
                 bookRequest.getStockCount());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-}
+    }
+
+    /**
+     * 該当書籍の全更新処理API
+     * @param id
+     * @param bookRequest
+     * @return　成功時：200 存在しない場合：404
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('admin_employee')")
+    public ResponseEntity<BookResponse> updateBook(@PathVariable Long id, @RequestBody BookRequest bookRequest){
+        
+        Optional <BookResponse> response = bookService.updateBook(id, bookRequest);
+
+        //空チェックを実施
+        if (response.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(response.get());
+    }
 }
