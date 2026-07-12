@@ -103,6 +103,11 @@ public class BookController {
         return ResponseEntity.ok(response.get());
     }
 
+    /**
+     * 該当書籍の削除処理API
+     * @param id
+     * @return
+     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('admin_employee')")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id){

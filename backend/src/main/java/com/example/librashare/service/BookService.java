@@ -105,17 +105,23 @@ public class BookService {
             book.getIsbn(), book.getStockCount());
     }
 
+    /**
+     * 該当書籍の削除処理
+     * @param id
+     * @return
+     */
     public boolean deleteBook(Long id) {
 
+        //該当書籍が存在するのか確認
         Optional<Book> find = bookRepository.findById(id);
         if (find.isEmpty()) {
-            //存在しない場合に空を返す
+            //存在しない場合にfalse
             return false;
         }
         Book book = find.get();
         //bookの論理削除フラグを更新
 
-        Book saved = bookRepository.save(book);
+        bookRepository.save(book);
 
         return true;
     }
