@@ -105,5 +105,20 @@ public class BookService {
             book.getIsbn(), book.getStockCount());
     }
 
+    public boolean deleteBook(Long id) {
+
+        Optional<Book> find = bookRepository.findById(id);
+        if (find.isEmpty()) {
+            //存在しない場合に空を返す
+            return false;
+        }
+        Book book = find.get();
+        //bookの論理削除フラグを更新
+
+        Book saved = bookRepository.save(book);
+
+        return true;
+    }
+
 
 }
