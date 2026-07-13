@@ -46,19 +46,26 @@ public class Book {
     @Column(name = "created_at", nullable = false,  updatable = false, insertable = false)
     private OffsetDateTime createdAt;
 
+    @Column(nullable = false)
+    private boolean deleted = false;
+    
     public Book() {
     }
 
-    public Book(Long id, String title, String author, String isbn, int stockCount, OffsetDateTime createdAt) {
-        this.id = id;
-        this.title = title;
-        this.author = author;
-        this.isbn = isbn;
-        this.stockCount = stockCount;
-        this.createdAt = createdAt;
-    }
+    
+    public Book(Long id, String title, String author, String isbn, int stockCount, OffsetDateTime createdAt,
+			boolean deleted) {
+		this.id = id;
+		this.title = title;
+		this.author = author;
+		this.isbn = isbn;
+		this.stockCount = stockCount;
+		this.createdAt = createdAt;
+		this.deleted = deleted;
+	}
 
-    public Long getId() {
+
+	public Long getId() {
         return id;
     }
 
@@ -106,5 +113,14 @@ public class Book {
         this.createdAt = createdAt;
     }
 
+	public boolean isDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(boolean deleted) {
+		this.deleted = deleted;
+	}
+
+    
 
 }

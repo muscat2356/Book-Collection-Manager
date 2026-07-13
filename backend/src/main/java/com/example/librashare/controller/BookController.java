@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -100,5 +101,24 @@ public class BookController {
         }
 
         return ResponseEntity.ok(response.get());
+    }
+
+    /**
+     * 該当書籍の削除処理API
+     * @param id
+     * @return
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('admin_employee')")
+    public ResponseEntity<Void> deleteBook(@PathVariable Long id){
+        boolean deleted = bookService.deleteBook(id);
+
+        //404エラー発生
+        if (!deleted) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        //204削除成功
+        return ResponseEntity.noContent().build();
     }
 }
