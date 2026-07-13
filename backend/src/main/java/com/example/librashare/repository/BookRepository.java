@@ -15,5 +15,4 @@ import com.example.librashare.domain.Book;
  */
 @Repository
 public interface BookRepository extends JpaRepository<Book, Long> {
-
 }
