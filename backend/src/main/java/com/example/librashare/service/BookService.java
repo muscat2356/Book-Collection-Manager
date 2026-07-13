@@ -120,6 +120,7 @@ public class BookService {
         }
         Book book = find.get();
         //bookの論理削除フラグを更新
+        book.setDeleted(true);
 
         bookRepository.save(book);
 
