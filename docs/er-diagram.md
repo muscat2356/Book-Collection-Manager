@@ -17,6 +17,7 @@ erDiagram
         varchar author
         varchar isbn
         int stock_count "在庫数（冊数）"
+        boolean deleted "論理削除フラグ。true で削除済み"
         timestamp created_at
     }
     USERS {
@@ -62,9 +63,8 @@ erDiagram
 
 補足:
 
-- `books` は **貸出履歴（`loans`）が 1 件でも存在する場合は削除不可** とします。
-- `users` は物理削除ではなく **論理削除（`is_active=false`）** を正とします。
-
+- `books` は物理削除ではなく **論理削除（`deleted=true`）** を正とします。貸出履歴を壊さないため行は残します。通常の一覧・詳細は `deleted=false` のみを対象とします。
+- `users` は物理削除ではなく **論理削除（`is_active=false`）** を正とします（変更なし）。
 ### CHECK（整合性）
 
 - `books.stock_count >= 0`
@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS books (
   author VARCHAR(255) NOT NULL,
   isbn VARCHAR(32),
   stock_count INTEGER NOT NULL,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT chk_books_stock_count_non_negative CHECK (stock_count >= 0)
 );
@@ -153,6 +154,7 @@ CREATE INDEX IF NOT EXISTS idx_loans_user_id ON loans (user_id);
 - 付与ロールは常に `general_user` のため `users` に `role` カラムは持ちません。ロール判定は JWT で行います。
 - アプリ DB は独自の `username` を持たず、表示は `display_name`、一意識別は `keycloak_sub` で行います。Keycloak のログイン識別子には `email` を用いる想定です。
 - 利用者削除は物理削除ではなく、`is_active=false` による論理削除 + Keycloak 無効化で行います。過去の `loans` 履歴は保持します。
+- 蔵書削除は物理削除ではなく、`deleted=true` による論理削除で行います。過去の `loans` 履歴は保持します。
 - `loans.returned_at` は返却された実績日時で、`status` と対応します（貸出中は NULL）。返却予定日 `due_at` は MVP-A のスコープ外です。
 - 型は PostgreSQL 前提です。`varchar` は長さ制約を意図した表記で、実装時に各カラムの最大長を定めます。
 - 延滞管理（`due_at` / `overdue_at`、`OVERDUE` ステータス）などの拡張は [docs/future-considerations.md](docs/future-considerations.md) を参照してください。

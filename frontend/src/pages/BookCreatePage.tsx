@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { createBook } from "../api/books"
+import { useApiClient } from "../api/ApiClientContext"
 
 export function BookCreatePage(){
     type BookFormData = {
@@ -19,6 +20,7 @@ export function BookCreatePage(){
         stockCount: 0
     })
 
+    const apiClient = useApiClient()
     const[error, setError] = useState<string | null>(null)
     const[submitting, setSubmitting] = useState(false)
 
@@ -27,7 +29,7 @@ export function BookCreatePage(){
         setError(null)
         setSubmitting(true)
 
-        createBook(formData)
+        createBook(apiClient, formData)
         .then(() => navigate('/books'))
         .catch((err) => setError(err.message))
         .finally(() => setSubmitting(false))
@@ -37,6 +39,9 @@ export function BookCreatePage(){
         <section className="page">
             <h1>新規書籍登録</h1>
             <form onSubmit={handleSubmit}>
+                {error && (
+                    <p className="page-status page-status--error">{error}</p>
+                )}
                 <div>
                     <label htmlFor="title">タイトル：</label>
                     <input
@@ -85,9 +90,6 @@ export function BookCreatePage(){
                      required />
                 </div>
 
-                {error && (
-                    <p className="page-status page-status--error">{error}</p>
-                )}
                 <button type="submit" className="btn btn--primary" disabled={submitting}>
                     {submitting ? '登録中...' : "登録"}
                 </button>

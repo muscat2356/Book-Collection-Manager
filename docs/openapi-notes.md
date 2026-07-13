@@ -16,6 +16,59 @@ LibraShare は社内バックオフィス向けの蔵書管理として扱う。
 
 ---
 
+## エラーレスポンス共通仕様
+
+アプリが返す業務・バリデーションエラーのボディは次で統一する。実装は `GlobalExceptionHandler`（`@RestControllerAdvice`）を想定する。
+
+```json
+{
+  "error": "USER_HAS_ACTIVE_LOANS",
+  "message": "貸出中の書籍があるため削除できません"
+}
+```
+
+| フィールド | 型 | 役割 |
+|------------|-----|------|
+| `error` | string | 機械可読コード（例: `VALIDATION_ERROR`） |
+| `message` | string | 人間向け文言（画面表示用） |
+
+MVP-A ではフィールド単位のエラー配列は返さない。入力バリデーション失敗時は先頭 1 件の `message` のみとする。
+
+### HTTP ステータス方針
+
+| 区分 | ステータス | ボディ | 備考 |
+|------|------------|--------|------|
+| 入力バリデーション（`@Valid` / Bean Validation） | **400** | `{ error, message }` | 例: `error: "VALIDATION_ERROR"` |
+| 業務衝突（在庫不足・貸出中で削除不可・二重返却 等） | **409** | `{ error, message }` | Conflict |
+| 未認証 | **401** | **固定**（Spring Security 既定） | `{ error, message }` に揃えない |
+| 権限不足 | **403** | **固定**（Spring Security 既定） | フロントは `"権限がありません"` を表示 |
+| リソースなし | **404** | 空ボディ可 | 蔵書詳細など。フロントは `null` 扱いで「見つかりません」UI |
+
+### バックエンド実装の分担
+
+| 層 | 内容 | 失敗時 |
+|----|------|--------|
+| Request DTO + `@Valid` | 必須・形式（`@NotBlank` / `@Min` 等） | `MethodArgumentNotValidException` → Handler → **400** |
+| Service | 業務ルール（在庫・状態衝突） | 業務例外 → Handler → **409** |
+
+### フロントの扱い
+
+- 画面表示は `response.data.message` を使う（既存 `toErrorMessage`）
+- `error` コードは将来の分岐用。MVP-A では未使用でも可
+- **403** は API ボディを読まず固定文言 `"権限がありません"`
+- **401** もボディ非統一のまま（Security 既定）
+
+### 代表的な `error` コード例
+
+| error | HTTP | 場面 |
+|-------|------|------|
+| `VALIDATION_ERROR` | 400 | 入力バリデーション失敗 |
+| `USER_HAS_ACTIVE_LOANS` | 409 | 利用者削除時に貸出中あり（変更なし） |
+| `INSUFFICIENT_STOCK` | 409 | 貸出時に在庫不足 |
+| `LOAN_ALREADY_RETURNED` | 409 | 返却済み貸出の再返却 等 |
+
+---
+
 ## 利用者管理 API（F-06）
 
 一般社員以上が利用できる API。**対象は貸出対象の利用者（`general_user`）のみ**で、社員・管理社員は扱わない（Keycloak 管理コンソールで管理）。これにより一般社員が社員・管理社員の情報を編集できてしまう権限昇格を構造的に防ぐ。
@@ -181,12 +234,20 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 
 **権限**: `admin_employee`
 
+論理削除。物理削除は行わない。アプリ DB の `books.deleted` を立てる（カラムはマージ前ブランチで追加済み）。
+
 ```json
 // Response 204
 {}
+
+// Response 409（例: 貸出中があり削除不可など業務衝突）
+{
+  "error": "BOOK_HAS_ACTIVE_LOANS",
+  "message": "貸出中のため削除できません"
+}
 ```
 
-削除時は、貸出中の本を削除できないなどの業務ルールを設計フェーズで決める。
+一覧・詳細の通常取得は `deleted=false`（未削除）のみを対象とする想定。
 
 ---
 
@@ -294,6 +355,8 @@ MVP-A で実装。OpenAPI 設計時の参考。
 
 一般社員以上が、貸出対象ユーザーと書籍を選択して貸出登録する。API は `users` と `books` の存在、`books.stockCount` を確認し、`loans` 作成と在庫減算を行う。
 
+在庫不足など業務衝突は **409** + `{ error, message }` で返す（例: `INSUFFICIENT_STOCK`）。
+
 ### PUT /api/loans/{id}/return
 
 ```json
@@ -307,6 +370,8 @@ MVP-A で実装。OpenAPI 設計時の参考。
   "status": "RETURNED"
 }
 ```
+
+二重返却など状態衝突は **409** + `{ error, message }` で返す（例: `LOAN_ALREADY_RETURNED`）。
 
 ### GET /api/loans/active
 
@@ -340,4 +405,6 @@ MVP-A で実装。OpenAPI 設計時の参考。
 ## 関連ドキュメント
 
 - [README](../README.md) — 3 ロール、利用者管理、F-02a/b/c、F-04、F-05、F-06、F-11 の機能定義
+- [er-diagram.md](./er-diagram.md) — DB（蔵書 `deleted` / 利用者 `is_active`）
+- [front-api-learning.md](./front-api-learning.md) — フロントの `toErrorMessage` 契約
 - [future-considerations.md](./future-considerations.md) — バッチ・延滞の将来案

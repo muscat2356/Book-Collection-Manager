@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Book } from "../types/Book";
 import { fetchBookById, updateBook } from "../api/books";
+import { useApiClient } from "../api/ApiClientContext";
 
 export function BookEditPage(){
     type BookFormData = {
@@ -13,6 +14,7 @@ export function BookEditPage(){
 
     const navigate = useNavigate()
     const { id } = useParams()
+    const apiClient = useApiClient()
     const [book, setBook] = useState<Book | null>(null)
     const [formData, setFormData] = useState<BookFormData | null>(null)
     const [loading, setLoading] = useState(true)
@@ -25,7 +27,7 @@ export function BookEditPage(){
         setSubmitting(true)
 
         if(!id || !formData) return
-        updateBook(id, formData)
+        updateBook(apiClient, id, formData)
         .then(() => navigate(`/books/${id}`))
         .catch((error) => setError(error.message))
         .finally(() => setSubmitting(false))
@@ -38,7 +40,7 @@ export function BookEditPage(){
             return
         }
 
-        fetchBookById(id)
+        fetchBookById(apiClient, id)
             .then((data) => {
                 if (!data) return
                 setBook(data);
@@ -51,14 +53,14 @@ export function BookEditPage(){
             })
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false))
-    }, [id])
+    }, [id, apiClient])
 
     if(loading) {
         return <p className="page-status">読み込み中・・・</p>
     }
 
     if(!book || !formData) {
-        return <p className="page-status page-status--error">利用者が見つかりません</p>
+        return <p className="page-status page-status--error">書籍が見つかりません</p>
     }
 
     return (
@@ -66,6 +68,9 @@ export function BookEditPage(){
             <h1>対象：{book.title}</h1>
 
             <form onSubmit={handleSubmit}>
+                {error && (
+                  <p className="page-status page-status--error">{error}</p>
+                )}
                 <div>
                     <label htmlFor="titie">タイトル：</label>
                     <input
@@ -130,9 +135,6 @@ export function BookEditPage(){
                       />
                 </div>
 
-                {error && (
-                  <p className="page-status page-status--error">{error}</p>
-                )}
                 <button type="submit" className="btn btn--primary" disabled={submitting}>
                 {submitting ? '更新中...' : '更新'}
                 </button>

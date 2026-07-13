@@ -62,6 +62,9 @@ export function UserEditPage(){
             <h1>対象利用者：{user.displayName}</h1>
 
             <form onSubmit={handleSubmit}>
+                {error && (
+                  <p className="page-status page-status--error">{error}</p>
+                )}
                 <div>
                     <label htmlFor="displayName">氏名：</label>
                     <input
@@ -93,9 +96,6 @@ export function UserEditPage(){
                      required
                       />
                 </div>
-                {error && (
-                  <p className="page-status page-status--error">{error}</p>
-                )}
                 <button type="submit" className="btn btn--primary" disabled={submitting}>
                 {submitting ? '更新中...' : '更新'}
                 </button>

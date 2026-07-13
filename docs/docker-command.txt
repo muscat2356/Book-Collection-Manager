@@ -25,3 +25,11 @@ chmod +x docker/keycloak/init/01-create-keycloak-db.sh
 
 docker compose down -v
 docker compose up postgres keycloak
+
+docker compose up -d --build backend
+
+docker exec -it Libra psql -U postgres -d libra -c "\dt"
+
+docker exec -it Libra psql -U postgres -d libra -c "SELECT count(*) FROM books; SELECT count(*) FROM users;"
+
+docker compose build --no-cache backend

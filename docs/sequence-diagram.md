@@ -76,7 +76,7 @@ sequenceDiagram
         Employee->>ReactSPA: 蔵書追加・更新・削除を操作
         ReactSPA->>SpringAPI: POST /api/books または PUT /api/books/{id} または DELETE /api/books/{id}
         SpringAPI->>SpringAPI: JWT と admin_employee ロールを検証
-        SpringAPI->>PostgreSQL: books を追加・更新・削除
+        SpringAPI->>PostgreSQL: books を追加・更新・論理削除（deleted=true）
         PostgreSQL-->>SpringAPI: 更新結果
         SpringAPI-->>ReactSPA: 201 Created または 200 OK または 204 No Content
         ReactSPA-->>Employee: 管理操作の結果を表示
@@ -185,6 +185,8 @@ sequenceDiagram
 - 利用者管理の対象は `general_user` のみです。社員・管理社員は Keycloak コンソールで管理し、アプリの API・画面からは作成・編集しません。
 - 利用者管理では Keycloak Admin API を呼び出し、Keycloak 側の利用者とアプリ DB の `users.keycloak_sub` を対応させます。付与ロールは常に `general_user` のため `users` に `role` は持ちません。
 - 利用者削除は論理削除で行い、Keycloak 側は `enabled=false`、アプリ DB は `is_active=false` を設定します。過去の `loans` 履歴は保持します。
+- 蔵書削除は論理削除で行い、アプリ DB は `books.deleted=true` を設定します。過去の `loans` 履歴は保持します。
+- 業務・バリデーションエラーのボディは `{ error, message }` で統一し、業務衝突は 409、入力バリデは 400 とする。401/403 は Security 既定のまま固定とする（詳細は [openapi-notes.md](./openapi-notes.md)）。
 - 貸出では `loans` の作成と `books.stock_count` の減算を同じ業務処理として扱います。
 - 返却では `loans.returned_at` と `loans.status` の更新、`books.stock_count` の加算を同じ業務処理として扱います。
 - 利用者自身が操作する `GET /api/loans/me` のようなマイ貸出機能は MVP-A の対象外です。
