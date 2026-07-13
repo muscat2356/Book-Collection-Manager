@@ -281,7 +281,7 @@ sequenceDiagram
     Page->>Books: fetchBooks(apiClient)
     Books->>Client: GET /api/books
     Client->>API: Authorization: Bearer JWT
-    API-->>Client: 403 Forbidden<br/>{ message: "..." }
+    API-->>Client: 403 Forbidden<br/>（Security 既定。ボディは共通形に揃えない）
     Client-->>Books: throw AxiosError<br/>(response.status=403)
     Books->>Books: toErrorMessage(err)<br/>→ "権限がありません"
     Books-->>Page: throw Error("権限がありません")
@@ -293,8 +293,9 @@ sequenceDiagram
 ```ts
 function toErrorMessage(err: unknown): string {
   if (isAxiosError(err)) {
+    // 401/403 は固定方針（API ボディを共通形に揃えない）
     if (err.response?.status === 403) return "権限がありません"
-    const data = err.response?.data as { message?: string } | undefined
+    const data = err.response?.data as { error?: string; message?: string } | undefined
     return data?.message ?? err.message
   }
   if (err instanceof Error) return err.message
@@ -305,9 +306,11 @@ function toErrorMessage(err: unknown): string {
 | 入力 `err` | 判定 | 出力 string | 画面に出る例 |
 |------------|------|-------------|--------------|
 | axios の HTTP エラー + status 403 | `isAxiosError` → 403 分岐 | `"権限がありません"` | admin 以外が CRUD したとき |
-| axios の HTTP エラー + その他 | `response.data.message` があればそれ、なければ `err.message` | API のメッセージ or axios 既定文 | 400 バリデーション等 |
+| axios の HTTP エラー + その他 | `response.data.message` があればそれ、なければ `err.message` | API の `message`（`error` コードは MVP-A では未使用可） | 400 バリデーション / 409 業務衝突 |
 | 通常の `Error`（ネットワーク切断など） | `instanceof Error` | `err.message` | `"Network Error"` 等 |
 | 上記以外（稀） | 最後のフォールバック | `"不明なエラーが発生しました"` | 想定外の throw |
+
+API のエラーボディ共通仕様（`{ error, message }` / 400・409 / 401・403 固定）は [openapi-notes.md](./openapi-notes.md) の「エラーレスポンス共通仕様」を正とする。
 
 **`isAxiosError(err)` とは**
 

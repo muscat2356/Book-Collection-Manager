@@ -180,13 +180,13 @@
 
 | テーブル | カラム |
 |----------|--------|
-| `books` | id, title, author, isbn, stock_count, created_at |
+| `books` | id, title, author, isbn, stock_count, deleted, created_at |
 | `users` | id, keycloak_sub, display_name, email, is_active, updated_at |
 | `loans` | id, book_id, user_id, borrowed_at, returned_at, status |
 
 `users` は貸出対象の利用者（`general_user`）のみを保持する参照テーブルで、認証・ロール管理の正は Keycloak とする。社員・管理社員は `users` に登録せず、Keycloak 管理コンソールで管理する。ロールは Keycloak（JWT）で判定するため `users` に `role` カラムは持たない。`loans` は貸出履歴・状態管理用で、`loans.user_id` は利用者を指す。F-04 の貸出操作でレコードが作成される。`books.stock_count` は在庫数（冊数）を表し、役割が異なる。
 
-利用者削除は **論理削除** とする。物理削除すると `loans.user_id` から辿る過去の貸出履歴が壊れるため、`users` は残したまま `is_active=false` を設定し、あわせて Keycloak 側のユーザーを無効化（`enabled=false`）する。利用者一覧の通常表示は `is_active=true` のみとし、貸出履歴では無効化済み利用者も表示できるようにする。
+蔵書削除は **論理削除**（`books.deleted=true`）とする。利用者削除は **論理削除**（`users.is_active=false`）とする。物理削除すると `loans` から辿る過去の貸出履歴が壊れるため、行は残す。利用者削除時はあわせて Keycloak 側のユーザーを無効化（`enabled=false`）する。利用者一覧の通常表示は `is_active=true` のみ、蔵書一覧の通常表示は `deleted=false` のみとし、貸出履歴では無効化・削除済みも参照できるようにする。貸出中の利用者は削除不可（`409`）。
 
 ## API エンドポイント
 
@@ -196,7 +196,7 @@
 | GET | `/api/books/{id}` | 蔵書詳細 | 一般社員・管理社員 |
 | POST | `/api/books` | 蔵書追加 | 管理社員のみ |
 | PUT | `/api/books/{id}` | 蔵書更新 | 管理社員のみ |
-| DELETE | `/api/books/{id}` | 蔵書削除 | 管理社員のみ |
+| DELETE | `/api/books/{id}` | 蔵書削除（論理削除 `deleted=true`） | 管理社員のみ |
 | GET | `/api/users` | 利用者一覧（`general_user` のみ） | 一般社員・管理社員 |
 | GET | `/api/users/{id}` | 利用者詳細 | 一般社員・管理社員 |
 | POST | `/api/users` | 利用者登録（Keycloak + アプリ DB。ロールは `general_user` 固定） | 一般社員・管理社員 |
