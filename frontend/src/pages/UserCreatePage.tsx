@@ -36,6 +36,9 @@ export function UserCreatePage(){
         <h1>利用者登録</h1>
 
         <form onSubmit={handleSubmit}>
+            {error && (
+          <p className="page-status page-status--error">{error}</p>
+        )}
             <div>
                 <label htmlFor="daisplayName">氏名：</label>
                 <input 
@@ -73,9 +76,6 @@ export function UserCreatePage(){
                 required
                 />
             </div>
-            {error && (
-          <p className="page-status page-status--error">{error}</p>
-        )}
         <button type="submit" className="btn btn--primary" disabled={submitting}>
           {submitting ? '登録中...' : '登録'}
         </button>

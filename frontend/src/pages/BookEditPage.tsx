@@ -68,6 +68,9 @@ export function BookEditPage(){
             <h1>対象：{book.title}</h1>
 
             <form onSubmit={handleSubmit}>
+                {error && (
+                  <p className="page-status page-status--error">{error}</p>
+                )}
                 <div>
                     <label htmlFor="titie">タイトル：</label>
                     <input
@@ -132,9 +135,6 @@ export function BookEditPage(){
                       />
                 </div>
 
-                {error && (
-                  <p className="page-status page-status--error">{error}</p>
-                )}
                 <button type="submit" className="btn btn--primary" disabled={submitting}>
                 {submitting ? '更新中...' : '更新'}
                 </button>

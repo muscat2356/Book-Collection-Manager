@@ -39,6 +39,9 @@ export function BookCreatePage(){
         <section className="page">
             <h1>新規書籍登録</h1>
             <form onSubmit={handleSubmit}>
+                {error && (
+                    <p className="page-status page-status--error">{error}</p>
+                )}
                 <div>
                     <label htmlFor="title">タイトル：</label>
                     <input
@@ -87,9 +90,6 @@ export function BookCreatePage(){
                      required />
                 </div>
 
-                {error && (
-                    <p className="page-status page-status--error">{error}</p>
-                )}
                 <button type="submit" className="btn btn--primary" disabled={submitting}>
                     {submitting ? '登録中...' : "登録"}
                 </button>
