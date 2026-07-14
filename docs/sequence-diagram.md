@@ -96,11 +96,12 @@ sequenceDiagram
         ReactSPA->>SpringAPI: POST /api/users または PUT /api/users/{id} または DELETE /api/users/{id}
         SpringAPI->>SpringAPI: JWT と general_employee 以上のロールを検証
         alt 利用者登録
-            SpringAPI->>KeycloakAdmin: 利用者作成と general_user ロール付与
+            SpringAPI->>SpringAPI: 初回パスワードを生成
+            SpringAPI->>KeycloakAdmin: 利用者作成（temporary パスワード）と general_user ロール付与
             KeycloakAdmin-->>SpringAPI: Keycloak user id
             SpringAPI->>PostgreSQL: users に keycloak_sub と表示情報を保存
             PostgreSQL-->>SpringAPI: 登録結果
-            SpringAPI-->>ReactSPA: 201 Created User
+            SpringAPI-->>ReactSPA: 201 Created User（パスワードは含めない）
         else 利用者更新
             SpringAPI->>KeycloakAdmin: 利用者属性を更新
             KeycloakAdmin-->>SpringAPI: 更新結果
@@ -184,6 +185,7 @@ sequenceDiagram
 - React SPA は Keycloak から取得した `access_token` を `Authorization: Bearer` ヘッダーに設定して API を呼び出します。
 - 利用者管理の対象は `general_user` のみです。社員・管理社員は Keycloak コンソールで管理し、アプリの API・画面からは作成・編集しません。
 - 利用者管理では Keycloak Admin API を呼び出し、Keycloak 側の利用者とアプリ DB の `users.keycloak_sub` を対応させます。付与ロールは常に `general_user` のため `users` に `role` は持ちません。
+- 利用者登録のリクエストは氏名・メールのみです。初回パスワードは API 側で生成し、Keycloak へ temporary フラグオンで設定します。パスワードはレスポンスに含めません。本人への通知は `general_user` ログイン実装時の将来検討とします。
 - 利用者削除は論理削除で行い、Keycloak 側は `enabled=false`、アプリ DB は `is_active=false` を設定します。過去の `loans` 履歴は保持します。
 - 蔵書削除は論理削除で行い、アプリ DB は `books.deleted=true` を設定します。過去の `loans` 履歴は保持します。
 - 業務・バリデーションエラーのボディは `{ error, message }` で統一し、業務衝突は 409、入力バリデは 400 とする。401/403 は Security 既定のまま固定とする（詳細は [openapi-notes.md](./openapi-notes.md)）。

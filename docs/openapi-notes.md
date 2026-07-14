@@ -77,6 +77,14 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 
 アプリ DB は独自の `username` を保持せず、表示は `displayName`、利用者の一意識別は `keycloakSub` で行う。付与ロールは常に `general_user` のため `users` に `role` カラムは持たず、API のボディでもロールは受け取らない。Keycloak 側のログイン識別子（`username`）には `email` を用いる想定。
 
+### 利用者登録時のパスワード（MVP-A）
+
+- リクエストボディは **氏名（`displayName`）とメール（`email`）のみ**。フロントからパスワードを送らない
+- バックエンドが初回パスワードを生成し、Keycloak Admin API でユーザー作成時に設定する
+- Keycloak のパスワードは **temporary フラグをオン** にする（初回ログイン時に変更を要求する想定）
+- 生成したパスワードは API レスポンス・画面には載せない
+- 利用者本人への初回パスワード通知は **MVP-A 対象外**。`general_user` のログイン実装時に検討する（[future-considerations.md](./future-considerations.md)）
+
 ### GET /api/users
 
 **権限**: `general_employee` / `admin_employee`
@@ -117,8 +125,7 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 // Request
 {
   "displayName": "山田 太郎",
-  "email": "yamada@example.com",
-  "temporaryPassword": "change-me"
+  "email": "yamada@example.com"
 }
 
 // Response 201
@@ -130,6 +137,14 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
   "isActive": true
 }
 ```
+
+処理内容:
+
+1. `email` の重複などを検証する（衝突時は 409 等）
+2. 初回パスワードをサーバー側で生成する
+3. Keycloak に利用者を作成し、`general_user` ロールを付与する。パスワードは temporary フラグをオンで設定する
+4. アプリ DB の `users` に `keycloakSub`・表示情報を保存する
+5. 201 で利用者情報を返す（パスワードは含めない）
 
 ### PUT /api/users/{id}
 
@@ -234,11 +249,14 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 
 **権限**: `admin_employee`
 
-論理削除。物理削除は行わない。アプリ DB の `books.deleted` を立てる（カラムはマージ前ブランチで追加済み）。
+論理削除。物理削除は行わない。アプリ DB の `books.deleted` を `true` にする（Flyway `V3__add_delete_to_book.sql` でカラム追加済み）。
 
 ```json
 // Response 204
 {}
+
+// Response 404（対象書籍が存在しない）
+（ボディなし）
 
 // Response 409（例: 貸出中があり削除不可など業務衝突）
 {
@@ -247,7 +265,13 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 }
 ```
 
-一覧・詳細の通常取得は `deleted=false`（未削除）のみを対象とする想定。
+処理内容:
+
+1. 対象書籍がなければ `404`
+2. あれば `deleted=true` に更新し `204`
+3. 貸出中など業務衝突がある場合は `409` + `{ error, message }`（エラー共通仕様に従う）
+
+一覧・詳細の通常取得は `deleted=false`（未削除）のみを対象とする。
 
 ---
 

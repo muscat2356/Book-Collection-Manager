@@ -17,7 +17,7 @@ export function UserCard({ user } : UserCardProps) {
                     <dt>メールアドレス</dt>
                     <dd>メールアドレス：{user.email}</dd>
                 </dl>
-                <Link to={`/users/${user.id}/edit`} className="book-card__link">
+                <Link to={`/users/${user.id}/edit`} className="book-card__link book-card__link--button">
                     編集
                 </Link>
             </div>

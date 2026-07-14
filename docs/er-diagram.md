@@ -63,7 +63,7 @@ erDiagram
 
 補足:
 
-- `books` は物理削除ではなく **論理削除（`deleted=true`）** を正とします。貸出履歴を壊さないため行は残します。通常の一覧・詳細は `deleted=false` のみを対象とします。
+- `books` は物理削除ではなく **論理削除（`deleted=true`）** を正とします。カラムは Flyway 移行 `V3__add_delete_to_book.sql` で追加済みです。貸出履歴を壊さないため行は残します。通常の一覧・詳細は `deleted=false` のみを対象とします。
 - `users` は物理削除ではなく **論理削除（`is_active=false`）** を正とします（変更なし）。
 ### CHECK（整合性）
 
@@ -90,6 +90,7 @@ Keycloak 連携の前提（識別子の一意性）を保つため、次を推�
 ## テーブル作成 SQL（PostgreSQL）
 
 `varchar` の最大長は現時点の暫定値です（必要に応じて調整してください）。
+初期スキーマに加え、`books.deleted` はマイグレーション `V3__add_delete_to_book.sql` で追加されています（以下は現時点の到達スキーマを示す）。
 
 ```sql
 -- books

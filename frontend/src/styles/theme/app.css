@@ -165,6 +165,75 @@ button.nav-link:hover {
   text-decoration: underline;
 }
 
+/* 利用者一覧など、ページ直下の登録導線をプライマリボタン風に */
+.page > .book-card__link {
+  display: inline-block;
+  margin: 0.25rem 0 1.25rem;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+}
+
+.page > .book-card__link:hover {
+  background: var(--accent-hover);
+  text-decoration: none;
+}
+
+.page > .book-card__link:active {
+  transform: scale(0.98);
+}
+
+/* 蔵書詳細の編集リンクをプライマリボタン風に */
+.book-detail > .book-card__link {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+}
+
+.book-detail > .book-card__link:hover {
+  background: var(--accent-hover);
+  text-decoration: none;
+}
+
+.book-detail > .book-card__link:active {
+  transform: scale(0.98);
+}
+
+/* 利用者カードの編集リンクをプライマリボタン風に */
+.book-card__link--button {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+}
+
+.book-card__link--button:hover {
+  background: var(--accent-hover);
+  text-decoration: none;
+}
+
+.book-card__link--button:active {
+  transform: scale(0.98);
+}
+
 /* 操作エリア（借りる・返却） */
 .book-card__actions {
   display: flex;

@@ -35,7 +35,7 @@ Member B 向け。`LibraShare/frontend/` の**現状**と、確定設計（[scre
 | `BookCreatePage.tsx` | 実装済み | mock。`POST /api/books` 接続（F-02a） |
 | `BookEditPage.tsx` | 実装済み | mock。`PUT /api/books/{id}` + 削除（F-02b/c） |
 | `UserListPage.tsx` | 実装済み | mock。`GET /api/users` 接続（F-06） |
-| `UserCreatePage.tsx` | 実装済み | mock。`POST /api/users` 接続（F-06） |
+| `UserCreatePage.tsx` | 実装済み | mock。氏名・メールのみ（パスワード欄削除）→ `POST /api/users` 接続（F-06） |
 | `UserEditPage.tsx` | 実装済み | mock。`PUT` / `DELETE` + 409 表示（F-06） |
 | `LoanBookListPage.tsx` | 実装済み | mock。`GET /api/loans/active` + 返却（F-05） |
 | `AccessDeniedPage.tsx` | **済** | `general_user` 拒否 + ログアウト |

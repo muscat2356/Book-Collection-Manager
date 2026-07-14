@@ -28,7 +28,7 @@ export function UserListPage(){
         <section className="page">
             <h1>利用者一覧</h1>
             <p className="page__lead">登録利用者の一覧です</p>
-            <Link to="/users/new" className="book-card__link">利用者新規登録（仮）</Link>
+            <Link to="/users/new" className="book-card__link">利用者新規登録</Link>
             <section className="book-list">
                 {users.map((user) => (
                     <UserCard key={user.id} user={user}/>
