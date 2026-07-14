@@ -4,7 +4,6 @@ import type { User } from "../types/User";
 export type CreateUserRequest = {
     displayName: string
     email: string
-    temporaryPassword: string
 }
 
 export type UpdateUserRequest = {
@@ -32,7 +31,7 @@ export async function fetchUsers(apiClient: AxiosInstance) {
     }
 }
 
-export async function fetchUserById(apiClient:AxiosInstance, id:number):Promise<User | null> {
+export async function fetchUserById(apiClient:AxiosInstance, id:string):Promise<User | null> {
     try {
         const response = await apiClient.get<User>(`/api/users/${id}`)
         return response.data
@@ -44,18 +43,26 @@ export async function fetchUserById(apiClient:AxiosInstance, id:number):Promise<
 
 export async function createUser(apiClient:AxiosInstance, data: CreateUserRequest): Promise<User> {
     try {
-        const response = await apiClient.post<User>(`/api/users/`,data)
+        const response = await apiClient.post<User>(`/api/users`,data)
         return response.data
     } catch (err) {
         throw new Error(toErrorMessage(err))
     }
 }
 
-export async function updateUser(apiClient:AxiosInstance, id: number, data: UpdateUserRequest): Promise<User> {
+export async function updateUser(apiClient:AxiosInstance, id: string, data: UpdateUserRequest): Promise<User> {
     try {
         const response = await apiClient.put<User>(`/api/users/${id}`, data)
         return response.data
       } catch (err) {
+        throw new Error(toErrorMessage(err))
+    }
+}
+
+export async function deleteUser(apiClient:AxiosInstance, id:string):Promise<void> {
+    try {
+        await apiClient.delete(`/api/users/${id}`)
+    } catch (err) {
         throw new Error(toErrorMessage(err))
     }
 }

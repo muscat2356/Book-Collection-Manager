@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { User } from "../types/User";
-import { fetchUserById, updateUser } from "../api/users";
+import { deleteUser, fetchUserById, updateUser } from "../api/users";
+import { useApiClient } from "../api/ApiClientContext";
 
 export function UserEditPage(){
     type UserFormData = {
@@ -10,23 +11,36 @@ export function UserEditPage(){
     }
 
     const navigate = useNavigate()
+    const apiClient = useApiClient()
     const { id } = useParams()
     const [user, setUser] = useState<User | null>(null)
     const [formData, setFormData] = useState<UserFormData | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [submitting, setSubmitting] = useState(false)
+    const [deleting, setDeleting] = useState(false)
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+        if(!id || !formData) return
         e.preventDefault()
         setError(null)
         setSubmitting(true)
 
-        if(!id || !formData) return
-        updateUser(id, formData)
+        updateUser(apiClient, id, formData)
         .then(() => navigate('/users'))
         .catch((error) => setError(error.message))
         .finally(() => setSubmitting(false))
+    }
+
+    function handleDelete() {
+        if(!id) return
+        if(!window.confirm("この利用者を削除しますか？"))return
+        setError(null)
+        setDeleting(true)
+        deleteUser(apiClient, id)
+        .then(() => navigate("/users"))
+        .catch((err) => setError(err.message))
+        .finally(() => setDeleting(false))
     }
 
     useEffect(() => {
@@ -36,7 +50,7 @@ export function UserEditPage(){
             return
         }
 
-        fetchUserById(id)
+        fetchUserById(apiClient, id)
             .then((data) => {
                 if (!data) return
                 setUser(data);
@@ -47,7 +61,7 @@ export function UserEditPage(){
             })
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false))
-    }, [id])
+    }, [id, apiClient])
 
     if(loading) {
         return <p className="page-status">読み込み中・・・</p>
@@ -66,7 +80,7 @@ export function UserEditPage(){
                   <p className="page-status page-status--error">{error}</p>
                 )}
                 <div>
-                    <label htmlFor="displayName">氏名：</label>
+                    <label htmlFor="daisplayName">氏名：</label>
                     <input
                      id="displayName"
                      type="text"
@@ -97,9 +111,16 @@ export function UserEditPage(){
                       />
                 </div>
                 <button type="submit" className="btn btn--primary" disabled={submitting}>
-                {submitting ? '更新中...' : '更新'}
+                {submitting || deleting ? '更新中...' : '更新'}
                 </button>
 
+                <button
+                 type="button"
+                 className="btn btn--primary"
+                 disabled={deleting}
+                 onClick={handleDelete} >
+                    {submitting || deleting ? '削除中...' : '削除'}
+                </button>
             </form>
 
         </section>

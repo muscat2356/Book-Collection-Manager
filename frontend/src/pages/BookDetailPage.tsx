@@ -24,7 +24,7 @@ export function BookDetailPage() {
 
     Promise.all([
       fetchBookById(apiClient, id),
-      fetchUsers()
+      fetchUsers(apiClient)
     ])
     .then(([bookData, userData]) => {
       setBook(bookData);
