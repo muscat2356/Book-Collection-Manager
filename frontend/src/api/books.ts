@@ -59,3 +59,14 @@ export async function updateBook(apiClient:AxiosInstance, id: string, data: Upda
     }
     
 }
+
+export async function deleteBook(
+    apiClient: AxiosInstance,
+    id: string
+  ): Promise<void> {
+    try {
+      await apiClient.delete(`/api/books/${id}`)
+    } catch (err) {
+      throw new Error(toErrorMessage(err))
+    }
+  }
