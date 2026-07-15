@@ -26,7 +26,7 @@ export function BookDetail({ book, users } : BookDetailProps) {
         setError(null)
         setSubmitting(true)
     
-        createLoan(book.id, selectedUserId)
+        createLoan(book.id, Number(selectedUserId))
         .then(() => navigate('/books'))
         .catch((err) => setError(err.message))
         .finally(() => setSubmitting(false))
