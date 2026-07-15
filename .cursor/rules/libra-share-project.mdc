@@ -16,7 +16,8 @@ alwaysApply: true
 ## スコープ
 
 - MVP-A のみがコミットライン。MVP-B（F-03/F-11/F-10）は余力時。
-- `/loans/me` は廃止。貸出中一覧は `/loans/active`。
+- `/loans/me` は廃止。貸出中一覧は `/loans/active`。貸出入口は `/loans/checkout`（通常の書誌詳細から貸出しない）。
+- 書誌 `books` と所蔵 `book_copies` を分離。貸出は `{ userId, bookCopyIds }`。詳細は `docs/refactor-holdings-and-checkout.md`。
 - 利用者管理の対象は `general_user` のみ。社員は Keycloak コンソール管理。
 
 ## Member B（フロント）依頼時

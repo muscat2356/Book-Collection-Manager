@@ -91,77 +91,24 @@ GET /api/loans?page=0&size=20      # ページング
 
 ## 複数冊の一括貸出・貸出予定リスト
 
-### MVP-A で不要とする理由
+### ステータス（確定）
 
-- F-04 の API は **`POST /api/loans`（body: `{ bookId, userId }`）の 1 件ずつ** が前提
-- 貸出 UI は **蔵書詳細で利用者を 1 人選び、1 冊を貸す** フローで完結する（画面遷移なし）
-- 同じ利用者へ複数冊貸す場合も、MVP-A では **詳細画面で 1 冊ずつ POST** する運用とする
-- 貸出予定リスト（カート型 UI）や一括 API はフロント state・エラー処理・API 設計のコストが増える
+**MVP-A の F-04 として採用済み。** 正の設計は [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md)。
 
-### 将来のユースケース
+| 項目 | 確定内容 |
+|------|----------|
+| API | `POST /api/loans` に `{ userId, bookCopyIds }`（`/loans/batch` や `bookIds` 案は不採用） |
+| UI | `/loans/checkout`（利用者 → 書誌カード → 詳細で所蔵選択 → 確認）。`LoanProvider` で選択を保持 |
+| TX | 全件成功 / 全件ロールバック |
+| 在庫 | `books.stock_count` ではなく `book_copies.status` |
+
+### なお将来候補として残すもの
 
 | シナリオ | 概要 |
 |----------|------|
-| 同一利用者への複数冊貸出 | 社員が利用者を 1 回選び、複数の蔵書をまとめて貸し出す |
-| 貸出前の確認 | 確定前に「誰に・どの本を」一覧でレビューする |
-| 在庫・貸出可否の一括チェック | 確定時にまとめてバリデーションし、不可の本だけ弾く |
-
-### UI 案（フロント）
-
-MVP-A の「詳細 + 利用者 select + 貸出ボタン」を拡張する想定。
-
-```
-1. 利用者を 1 回選ぶ（利用者一覧から「この人に貸出」モード、または詳細で select）
-2. 蔵書一覧・詳細で「貸出予定に追加」
-3. 貸出予定リスト（サイドパネル or 専用 Route）で確認
-4. 「一括貸出」で確定
-```
-
-| 方式 | メリット | デメリット |
-|------|----------|------------|
-| フロントのみ（`POST /api/loans` をループ） | API 変更なしで試せる | 途中失敗時のロールバックがない |
-| 一括 API + 予定リスト UI | トランザクション・整合性を API で担保しやすい | Member A の API 追加が必要 |
-
-### API 拡張案（参考）
-
-一括貸出を正式機能にする場合の例。
-
-```
-POST /api/loans/batch
-```
-
-```json
-// Request
-{
-  "userId": 10,
-  "bookIds": [1, 2, 5]
-}
-
-// Response 201（成功時の例）
-{
-  "loans": [
-    { "id": 42, "bookId": 1, "userId": 10, "status": "BORROWED" },
-    { "id": 43, "bookId": 2, "userId": 10, "status": "BORROWED" },
-    { "id": 44, "bookId": 5, "userId": 10, "status": "BORROWED" }
-  ]
-}
-
-// Response 409（在庫不足など一部不可の例 — 設計時に要決定）
-{
-  "error": "SOME_BOOKS_UNAVAILABLE",
-  "message": "在庫が不足している書籍があります",
-  "failedBookIds": [5]
-}
-```
-
-- 全件成功 / 全件失敗（トランザクション）か、部分成功を許すかは **設計フェーズで決める**
-- MVP-A の単件 `POST /api/loans` は後方互換のため残す想定
-
-### 移行時の注意
-
-- 予定リストの state は **React のみ（セッション）** か **localStorage / サーバー** かを決める
-- 貸出中一覧（`GET /api/loans/active`）・在庫（`books.stock_count`）との表示整合を一括確定後に再 fetch する
-- 学習スコープでは MVP-A 完了後（MVP-B 以降または Phase 2）の検討とする
+| barcode / location | 所蔵の物理特定（スキャン貸出） |
+| `due_at` / 延滞 | 返却期限（別節） |
+| localStorage への選択永続化 | 現状はタブ内 `useState` のみ |
 
 ---
 

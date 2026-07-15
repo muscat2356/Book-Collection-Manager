@@ -3,9 +3,9 @@
 | 項目 | 内容 |
 |------|------|
 | **対象** | **Member A**（DB / API / Security 境界）と **Member B**（SPA / 画面 / API クライアント）の双方 |
-| **ステータス** | 合意待ち。確定後に各設計 docs を更新してから実装 |
+| **ステータス** | **確定**（2026-07-15）。設計 docs へ反映済み。実装は Member A / B が各自で行う |
 | **目的** | [refact-plane.md](./refact-plane.md) を出発点に、現行設計の核を崩さず書誌・所蔵分離と一括貸出へ移行する合意文書 |
-| **現行の正** | [er-diagram.md](./er-diagram.md) / [openapi-notes.md](./openapi-notes.md) / [screen-transition.md](./screen-transition.md) / [sequence-diagram.md](./sequence-diagram.md) / [README.md](../README.md) / [frontend-gap-analysis.md](./frontend-gap-analysis.md) |
+| **設計の正（併読）** | [er-diagram.md](./er-diagram.md) / [openapi-notes.md](./openapi-notes.md) / [screen-transition.md](./screen-transition.md) / [sequence-diagram.md](./sequence-diagram.md) / [README.md](../README.md) / [frontend-gap-analysis.md](./frontend-gap-analysis.md) |
 
 **読み方**
 
@@ -886,4 +886,4 @@ export async function createLoans(userId: number, bookCopyIds: number[]) {
 2. `stockCount` → `availableCount` / `totalCount` / `holdings` の型変更でよいか  
 3. 通常詳細から貸出削除・checkout への統一でよいか  
 
-質問・修正案はこのドキュメントへのコメント / Issue / PR で共有してください。合意後に Phase 0（各 docs 更新）へ進みます。
+設計 docs（Phase 0）は本確定内容で更新済みです。実装は Phase 1 以降を Member A / B が各自で進めてください。

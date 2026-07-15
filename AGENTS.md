@@ -64,6 +64,7 @@ WebSocket、一般ユーザー向けマイページ、`GET /api/loans/me`、延�
 
 ## 設計ドキュメント（正）
 
+- [docs/refactor-holdings-and-checkout.md](docs/refactor-holdings-and-checkout.md) — 書誌/所蔵分離・checkout 一括貸出（確定）
 - [docs/screen-transition.md](docs/screen-transition.md) — 画面・ルート
 - [docs/openapi-notes.md](docs/openapi-notes.md) — API 契約
 - [docs/sequence-diagram.md](docs/sequence-diagram.md) — フロー

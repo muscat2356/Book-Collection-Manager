@@ -30,7 +30,7 @@ SPA ルート: `/books`, `/books/:id`, `/books/new`, `/books/:id/edit`,
 - ページ: `useEffect` で取得 → `loading` / `error` / `data` の 3 状態
 - API: `api/client.ts` の interceptor で Bearer JWT 付与
 - ロール: JWT から `general_employee` / `admin_employee` を判定し Layout ナビを出し分け
-- 貸出: `POST /api/loans`（bookId + userId）。返却: `PUT /api/loans/{id}/return`
+- 貸出: `POST /api/loans`（`{ userId, bookCopyIds }` 一括・checkout UI）。返却: `PUT /api/loans/{id}/return`
 - 削除: 409（例: USER_HAS_ACTIVE_LOANS）を画面内で表示
 
 ## 参照

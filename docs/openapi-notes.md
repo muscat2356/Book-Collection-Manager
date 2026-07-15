@@ -195,13 +195,56 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 
 ---
 
-## 蔵書 CRUD API（F-02a / F-02b / F-02c）
+## 書誌 API（F-02 / F-02a / F-02b / F-02c）
 
-管理社員のみが利用できる API。ログイン後ヘッダーの管理メニューまたは蔵書一覧・詳細画面の管理操作から呼び出す。
+`books` は書誌（種類）、`book_copies` は所蔵（1 冊）です。在庫数は `stockCount` ではなく所蔵の集計（`totalCount` / `availableCount`）で表します。詳細は [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md) を参照。
+
+一覧・詳細の通常取得は `deleted=false` の書誌のみを対象とする。
+
+### GET /api/books
+
+**権限**: `general_employee` / `admin_employee`
+
+```json
+// Response 200
+[
+  {
+    "id": 1,
+    "title": "リーダブルコード",
+    "author": "Boswell",
+    "isbn": "978-4-87311-565-8",
+    "totalCount": 3,
+    "availableCount": 2
+  }
+]
+```
+
+### GET /api/books/{id}
+
+**権限**: `general_employee` / `admin_employee`
+
+```json
+// Response 200
+{
+  "id": 1,
+  "title": "リーダブルコード",
+  "author": "Boswell",
+  "isbn": "978-4-87311-565-8",
+  "totalCount": 3,
+  "availableCount": 2,
+  "holdings": [
+    { "id": 12, "status": "AVAILABLE" },
+    { "id": 14, "status": "LOANED" },
+    { "id": 15, "status": "AVAILABLE" }
+  ]
+}
+```
 
 ### POST /api/books
 
 **権限**: `admin_employee`
+
+`initialCopyCount` 件の `AVAILABLE` 所蔵を同時に作成する。
 
 ```json
 // Request
@@ -209,7 +252,7 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
   "title": "リーダブルコード",
   "author": "Boswell",
   "isbn": "978-4-87311-565-8",
-  "stockCount": 3
+  "initialCopyCount": 3
 }
 
 // Response 201
@@ -218,7 +261,13 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
   "title": "リーダブルコード",
   "author": "Boswell",
   "isbn": "978-4-87311-565-8",
-  "stockCount": 3
+  "totalCount": 3,
+  "availableCount": 3,
+  "holdings": [
+    { "id": 12, "status": "AVAILABLE" },
+    { "id": 13, "status": "AVAILABLE" },
+    { "id": 14, "status": "AVAILABLE" }
+  ]
 }
 ```
 
@@ -226,13 +275,14 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 
 **権限**: `admin_employee`
 
+書誌情報のみ更新する。冊数は受け付けない（所蔵の追加は次節）。
+
 ```json
 // Request
 {
   "title": "リーダブルコード 改訂版",
   "author": "Boswell",
-  "isbn": "978-4-87311-565-8",
-  "stockCount": 5
+  "isbn": "978-4-87311-565-8"
 }
 
 // Response 200
@@ -241,7 +291,30 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
   "title": "リーダブルコード 改訂版",
   "author": "Boswell",
   "isbn": "978-4-87311-565-8",
-  "stockCount": 5
+  "totalCount": 3,
+  "availableCount": 2,
+  "holdings": [
+    { "id": 12, "status": "AVAILABLE" },
+    { "id": 14, "status": "LOANED" },
+    { "id": 15, "status": "AVAILABLE" }
+  ]
+}
+```
+
+### POST /api/books/{id}/copies
+
+**権限**: `admin_employee`
+
+所蔵を 1 冊追加する。
+
+```json
+// Request
+{}
+
+// Response 201
+{
+  "id": 16,
+  "status": "AVAILABLE"
 }
 ```
 
@@ -249,29 +322,27 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 
 **権限**: `admin_employee`
 
-論理削除。物理削除は行わない。アプリ DB の `books.deleted` を `true` にする（Flyway `V3__add_delete_to_book.sql` でカラム追加済み）。
+論理削除。物理削除は行わない。アプリ DB の `books.deleted` を `true` にする。
 
 ```json
 // Response 204
 {}
 
-// Response 404（対象書籍が存在しない）
+// Response 404（対象書誌が存在しない）
 （ボディなし）
 
-// Response 409（例: 貸出中があり削除不可など業務衝突）
+// Response 409（貸出中の所蔵があり削除不可）
 {
-  "error": "BOOK_HAS_ACTIVE_LOANS",
-  "message": "貸出中のため削除できません"
+  "error": "BOOK_HAS_LOANED_COPIES",
+  "message": "貸出中の所蔵があるため削除できません"
 }
 ```
 
 処理内容:
 
-1. 対象書籍がなければ `404`
-2. あれば `deleted=true` に更新し `204`
-3. 貸出中など業務衝突がある場合は `409` + `{ error, message }`（エラー共通仕様に従う）
-
-一覧・詳細の通常取得は `deleted=false`（未削除）のみを対象とする。
+1. 対象書誌がなければ `404`
+2. 紐づく所蔵に `status=LOANED` があれば `409`
+3. なければ `deleted=true` に更新し `204`
 
 ---
 
@@ -299,7 +370,8 @@ GET /api/books?page={page}&size={size}
       "title": "リーダブルコード",
       "author": "Boswell",
       "isbn": "978-4-87311-565-8",
-      "stockCount": 3
+      "totalCount": 3,
+      "availableCount": 2
     }
   ],
   "page": 0,
@@ -311,7 +383,7 @@ GET /api/books?page={page}&size={size}
 
 | フィールド | 型 | 説明 |
 |------------|-----|------|
-| `content` | Book[] | 当該ページの書籍一覧 |
+| `content` | Book[] | 当該ページの書誌一覧（`totalCount` / `availableCount`） |
 | `page` | integer | 現在のページ番号 |
 | `size` | integer | ページサイズ |
 | `totalElements` | long | 全件数 |
@@ -351,35 +423,65 @@ GET /api/books?q=react&page=0&size=20
 
 ---
 
-## 貸出 API（F-04 / F-05 参考）
+## 貸出 API（F-04 / F-05）
 
-MVP-A で実装。OpenAPI 設計時の参考。
+MVP-A で実装。貸出入口は SPA の `/loans/checkout`。詳細は [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md)。
 
 **権限**: `general_employee` / `admin_employee`
 
 ### POST /api/loans
 
+複数所蔵を 1 リクエストで一括貸出する（全件成功 / 全件ロールバック）。
+
 ```json
 // Request
 {
-  "bookId": 1,
-  "userId": 10
+  "userId": 10,
+  "bookCopyIds": [12, 15]
 }
 
 // Response 201
 {
-  "id": 42,
-  "bookId": 1,
-  "userId": 10,
-  "borrowedAt": "2026-06-30T10:00:00Z",
-  "returnedAt": null,
-  "status": "BORROWED"
+  "loans": [
+    {
+      "id": 42,
+      "bookCopyId": 12,
+      "bookId": 1,
+      "bookTitle": "リーダブルコード",
+      "userId": 10,
+      "borrowedAt": "2026-06-30T10:00:00Z",
+      "returnedAt": null,
+      "status": "BORROWED"
+    },
+    {
+      "id": 43,
+      "bookCopyId": 15,
+      "bookId": 1,
+      "bookTitle": "リーダブルコード",
+      "userId": 10,
+      "borrowedAt": "2026-06-30T10:00:00Z",
+      "returnedAt": null,
+      "status": "BORROWED"
+    }
+  ]
+}
+
+// Response 409
+{
+  "error": "COPY_NOT_AVAILABLE",
+  "message": "貸出できない所蔵が含まれています",
+  "failedBookCopyIds": [15]
 }
 ```
 
-一般社員以上が、貸出対象ユーザーと書籍を選択して貸出登録する。API は `users` と `books` の存在、`books.stockCount` を確認し、`loans` 作成と在庫減算を行う。
+処理内容:
 
-在庫不足など業務衝突は **409** + `{ error, message }` で返す（例: `INSUFFICIENT_STOCK`）。
+1. 利用者の存在・有効を確認する
+2. 各 `bookCopyId` を行ロックし `AVAILABLE` であることを確認する
+3. 1 件でも不可なら 409 で全体ロールバック
+4. 各 copy を `LOANED`、`loans` を `BORROWED` で作成する
+
+サーバによる自動割当は行わない。クライアントが指定した `bookCopyIds` のみを検証する。
 
 ### PUT /api/loans/{id}/return
 
@@ -387,7 +489,9 @@ MVP-A で実装。OpenAPI 設計時の参考。
 // Response 200
 {
   "id": 42,
+  "bookCopyId": 12,
   "bookId": 1,
+  "bookTitle": "リーダブルコード",
   "userId": 10,
   "borrowedAt": "2026-06-30T10:00:00Z",
   "returnedAt": "2026-07-07T15:30:00Z",
@@ -395,17 +499,18 @@ MVP-A で実装。OpenAPI 設計時の参考。
 }
 ```
 
-二重返却など状態衝突は **409** + `{ error, message }` で返す（例: `LOAN_ALREADY_RETURNED`）。
+当該所蔵を `AVAILABLE` に戻す。二重返却など状態衝突は **409**（例: `LOAN_ALREADY_RETURNED`）。
 
 ### GET /api/loans/active
 
-貸出中の利用者を把握するため、`status=BORROWED` の貸出を利用者情報つきで返す。
+貸出中（`status=BORROWED`）を利用者・書誌情報つきで返す。
 
 ```json
 // Response 200
 [
   {
     "id": 42,
+    "bookCopyId": 12,
     "book": {
       "id": 1,
       "title": "リーダブルコード",
@@ -429,6 +534,7 @@ MVP-A で実装。OpenAPI 設計時の参考。
 ## 関連ドキュメント
 
 - [README](../README.md) — 3 ロール、利用者管理、F-02a/b/c、F-04、F-05、F-06、F-11 の機能定義
-- [er-diagram.md](./er-diagram.md) — DB（蔵書 `deleted` / 利用者 `is_active`）
+- [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md) — 書誌/所蔵・一括貸出の確定設計
+- [er-diagram.md](./er-diagram.md) — DB（書誌 `deleted` / 所蔵 / 利用者 `is_active`）
 - [front-api-learning.md](./front-api-learning.md) — フロントの `toErrorMessage` 契約
-- [future-considerations.md](./future-considerations.md) — バッチ・延滞の将来案
+- [future-considerations.md](./future-considerations.md) — バッチ・延滞などの将来案

@@ -6,13 +6,13 @@
 
 - Keycloak ログインと JWT 取得
 - Spring Boot API への Bearer JWT 付きリクエスト
-- 蔵書一覧・詳細の参照
-- 管理社員による蔵書追加・更新・削除
+- 書誌一覧・詳細（所蔵状態つき）の参照
+- 管理社員による書誌追加・更新・削除、所蔵追加
 - 一般社員以上による利用者登録・更新・削除（対象は利用者のみ）
-- 書籍の貸出・返却と在庫連動
+- checkout からの複数所蔵一括貸出と返却（所蔵 status 連動）
 - 貸出中一覧での利用者把握
 
-MVP-B の検索・ページング、将来検討の延滞バッチはメインの図には含めません。
+MVP-B の検索・ページング、将来検討の延滞バッチはメインの図には含めません。確定設計の詳細は [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md) を参照。
 
 ## 参加者
 
@@ -23,15 +23,15 @@ MVP-B の検索・ページング、将来検討の延滞バッチはメイン�
 | Keycloak | OIDC 認証基盤 |
 | KeycloakAdmin | Keycloak Admin API |
 | SpringAPI | Spring Boot REST API / OAuth2 Resource Server |
-| PostgreSQL | `books` / `users` / `loans` を保持する DB |
+| PostgreSQL | `books` / `book_copies` / `users` / `loans` を保持する DB |
 
 ## ロール
 
 | ロール | 利用できる主な機能 |
 |--------|--------------------|
 | `general_user` | 貸出対象の利用者。バックオフィス画面の操作は対象外（Keycloak + アプリ DB で管理） |
-| `general_employee` | 蔵書一覧・詳細、利用者管理、貸出、返却、貸出中一覧（Keycloak コンソールで管理） |
-| `admin_employee` | 一般社員の機能 + 蔵書追加・更新・削除（Keycloak コンソールで管理） |
+| `general_employee` | 書誌一覧・詳細、利用者管理、checkout 貸出、返却、貸出中一覧（Keycloak コンソールで管理） |
+| `admin_employee` | 一般社員の機能 + 書誌追加・更新・削除・所蔵追加（Keycloak コンソールで管理） |
 
 ## 全体シーケンス
 
@@ -57,26 +57,26 @@ sequenceDiagram
     SpringAPI->>Keycloak: JWT 署名検証用の公開鍵・メタデータを取得
     Keycloak-->>SpringAPI: 検証用メタデータ
     SpringAPI->>SpringAPI: JWT とロールを検証
-    SpringAPI->>PostgreSQL: books を検索
-    PostgreSQL-->>SpringAPI: 蔵書一覧
+    SpringAPI->>PostgreSQL: books と所蔵集計を検索
+    PostgreSQL-->>SpringAPI: 書誌一覧
     SpringAPI-->>ReactSPA: 200 OK Book[]
-    ReactSPA-->>Employee: 蔵書一覧を表示
+    ReactSPA-->>Employee: 書誌一覧を表示
 
-    opt 蔵書詳細を表示
-        Employee->>ReactSPA: 蔵書を選択
+    opt 書誌詳細を表示
+        Employee->>ReactSPA: 書誌を選択
         ReactSPA->>SpringAPI: GET /api/books/{id}
         SpringAPI->>SpringAPI: JWT とロールを検証
-        SpringAPI->>PostgreSQL: books を id で検索
-        PostgreSQL-->>SpringAPI: 蔵書詳細
+        SpringAPI->>PostgreSQL: books と book_copies を検索
+        PostgreSQL-->>SpringAPI: 書誌詳細と holdings
         SpringAPI-->>ReactSPA: 200 OK Book
-        ReactSPA-->>Employee: 蔵書詳細を表示
+        ReactSPA-->>Employee: 書誌詳細と所蔵状態を表示
     end
 
     alt 管理社員 admin_employee
-        Employee->>ReactSPA: 蔵書追加・更新・削除を操作
-        ReactSPA->>SpringAPI: POST /api/books または PUT /api/books/{id} または DELETE /api/books/{id}
+        Employee->>ReactSPA: 書誌追加・更新・削除・所蔵追加を操作
+        ReactSPA->>SpringAPI: POST /api/books または PUT /api/books/{id} または POST /api/books/{id}/copies または DELETE /api/books/{id}
         SpringAPI->>SpringAPI: JWT と admin_employee ロールを検証
-        SpringAPI->>PostgreSQL: books を追加・更新・論理削除（deleted=true）
+        SpringAPI->>PostgreSQL: books / book_copies を追加・更新・論理削除
         PostgreSQL-->>SpringAPI: 更新結果
         SpringAPI-->>ReactSPA: 201 Created または 200 OK または 204 No Content
         ReactSPA-->>Employee: 管理操作の結果を表示
@@ -124,37 +124,38 @@ sequenceDiagram
         ReactSPA-->>Employee: 利用者管理の結果を表示
     end
 
-    opt 書籍を借りる
-        Employee->>ReactSPA: 貸出対象の利用者と書籍を選択
-        ReactSPA->>SpringAPI: POST /api/loans body: { bookId, userId }
+    opt checkout で複数所蔵を借りる
+        Employee->>ReactSPA: 利用者と書誌・所蔵を選択して確認
+        ReactSPA->>SpringAPI: POST /api/loans body: { userId, bookCopyIds }
         SpringAPI->>SpringAPI: JWT と利用可能ロールを検証
         SpringAPI->>PostgreSQL: users を userId で検索
         PostgreSQL-->>SpringAPI: 貸出対象の利用者
-        SpringAPI->>PostgreSQL: books.stock_count を確認
-        PostgreSQL-->>SpringAPI: 在庫数
-        SpringAPI->>PostgreSQL: loans を作成 status=BORROWED
-        SpringAPI->>PostgreSQL: books.stock_count を 1 減算
+        loop 各 bookCopyId
+            SpringAPI->>PostgreSQL: book_copies を FOR UPDATE で取得
+            PostgreSQL-->>SpringAPI: AVAILABLE の所蔵
+            SpringAPI->>PostgreSQL: copy を LOANED、loans を BORROWED で作成
+        end
         PostgreSQL-->>SpringAPI: 貸出結果
-        SpringAPI-->>ReactSPA: 201 Created Loan
-        ReactSPA-->>Employee: 貸出完了と在庫数を反映
+        SpringAPI-->>ReactSPA: 201 Created loans[]
+        ReactSPA-->>Employee: 貸出完了を表示
     end
 
     opt 書籍を返却する
-        Employee->>ReactSPA: 返すボタンを押す
+        Employee->>ReactSPA: 貸出中一覧で返すを押す
         ReactSPA->>SpringAPI: PUT /api/loans/{id}/return
         SpringAPI->>SpringAPI: JWT と利用可能ロールを検証
-        SpringAPI->>PostgreSQL: loans.returned_at と status を更新
-        SpringAPI->>PostgreSQL: books.stock_count を 1 加算
+        SpringAPI->>PostgreSQL: loans を RETURNED に更新
+        SpringAPI->>PostgreSQL: book_copies を AVAILABLE に戻す
         PostgreSQL-->>SpringAPI: 返却結果
         SpringAPI-->>ReactSPA: 200 OK Loan
-        ReactSPA-->>Employee: 返却完了と在庫数を反映
+        ReactSPA-->>Employee: 返却完了を表示
     end
 
     opt 貸出中の利用者を確認する
         Employee->>ReactSPA: 貸出中一覧を開く
         ReactSPA->>SpringAPI: GET /api/loans/active
         SpringAPI->>SpringAPI: JWT と general_employee 以上のロールを検証
-        SpringAPI->>PostgreSQL: BORROWED loans を users と books つきで検索
+        SpringAPI->>PostgreSQL: BORROWED loans を users と books / copies つきで検索
         PostgreSQL-->>SpringAPI: 貸出中一覧と利用者情報
         SpringAPI-->>ReactSPA: 200 OK Loan[]
         ReactSPA-->>Employee: 貸出中の利用者を表示
@@ -165,11 +166,12 @@ sequenceDiagram
 
 | フロー | API | 権限 |
 |--------|-----|------|
-| 蔵書一覧 | `GET /api/books` | `general_employee` / `admin_employee` |
-| 蔵書詳細 | `GET /api/books/{id}` | `general_employee` / `admin_employee` |
-| 蔵書追加 | `POST /api/books` | `admin_employee` |
-| 蔵書更新 | `PUT /api/books/{id}` | `admin_employee` |
-| 蔵書削除 | `DELETE /api/books/{id}` | `admin_employee` |
+| 書誌一覧 | `GET /api/books` | `general_employee` / `admin_employee` |
+| 書誌詳細 | `GET /api/books/{id}` | `general_employee` / `admin_employee` |
+| 書誌追加 | `POST /api/books` | `admin_employee` |
+| 書誌更新 | `PUT /api/books/{id}` | `admin_employee` |
+| 所蔵追加 | `POST /api/books/{id}/copies` | `admin_employee` |
+| 書誌削除 | `DELETE /api/books/{id}` | `admin_employee` |
 | 利用者一覧 | `GET /api/users` | `general_employee` / `admin_employee` |
 | 利用者詳細 | `GET /api/users/{id}` | `general_employee` / `admin_employee` |
 | 利用者登録 | `POST /api/users` | `general_employee` / `admin_employee` |
@@ -187,8 +189,8 @@ sequenceDiagram
 - 利用者管理では Keycloak Admin API を呼び出し、Keycloak 側の利用者とアプリ DB の `users.keycloak_sub` を対応させます。付与ロールは常に `general_user` のため `users` に `role` は持ちません。
 - 利用者登録のリクエストは氏名・メールのみです。初回パスワードは API 側で生成し、Keycloak へ temporary フラグオンで設定します。パスワードはレスポンスに含めません。本人への通知は `general_user` ログイン実装時の将来検討とします。
 - 利用者削除は論理削除で行い、Keycloak 側は `enabled=false`、アプリ DB は `is_active=false` を設定します。過去の `loans` 履歴は保持します。
-- 蔵書削除は論理削除で行い、アプリ DB は `books.deleted=true` を設定します。過去の `loans` 履歴は保持します。
+- 書誌削除は論理削除で行い、アプリ DB は `books.deleted=true` を設定します。貸出中所蔵（`LOANED`）がある場合は 409 です。過去の `loans` 履歴は保持します。
 - 業務・バリデーションエラーのボディは `{ error, message }` で統一し、業務衝突は 409、入力バリデは 400 とする。401/403 は Security 既定のまま固定とする（詳細は [openapi-notes.md](./openapi-notes.md)）。
-- 貸出では `loans` の作成と `books.stock_count` の減算を同じ業務処理として扱います。
-- 返却では `loans.returned_at` と `loans.status` の更新、`books.stock_count` の加算を同じ業務処理として扱います。
+- 貸出では同一トランザクション内で各 `book_copies` を `LOANED` にし、`loans`（`BORROWED`）を件数分作成します。
+- 返却では `loans` を `RETURNED` にし、対応する `book_copies` を `AVAILABLE` に戻します。
 - 利用者自身が操作する `GET /api/loans/me` のようなマイ貸出機能は MVP-A の対象外です。

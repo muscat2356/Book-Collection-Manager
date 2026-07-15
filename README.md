@@ -25,7 +25,7 @@
 | ロール | 想定ユーザー | 利用できる主な機能 |
 |--------|--------------|--------------------|
 | `general_user` | 貸出対象の利用者 | 貸出履歴の紐付け対象。バックオフィス画面の操作は対象外 |
-| `general_employee` | 一般社員 | 蔵書一覧・詳細、利用者管理、貸出/返却、貸出中一覧 |
+| `general_employee` | 一般社員 | 書誌一覧・詳細、利用者管理、checkout 貸出/返却、貸出中一覧 |
 | `admin_employee` | 管理社員 | 一般社員の機能 + 蔵書追加・更新・削除 |
 
 全ユーザーの認証・ロール管理は Keycloak を正とします。ログイン後のヘッダーはロールに応じて表示項目を切り替えます。
@@ -41,42 +41,41 @@
 | ID | 機能 | Member A | Member B |
 |----|------|----------|----------|
 | F-01 | Keycloak ログイン + 3 ロール RBAC | Security, Keycloak, Docker | Keycloak JS, Protected Route |
-| F-02 | 蔵書一覧・詳細 | 参照 API, Flyway | 一覧・詳細画面 |
-| F-02a | 蔵書追加（管理社員のみ） | 登録 API | 追加画面 / ヘッダー導線 |
-| F-02b | 蔵書更新（管理社員のみ） | 更新 API | 編集画面 / 管理操作 |
-| F-02c | 蔵書削除（管理社員のみ） | 削除 API | 削除操作 / 確認 UI |
-| F-04 | 貸出 / 返却 + 在庫連動 | 貸出 API（`loans` テーブル連携） | 貸出/返却操作 → API 呼び出し |
+| F-02 | 書誌一覧・詳細（所蔵状態つき） | 参照 API, Flyway | 一覧・詳細画面 |
+| F-02a | 書誌追加（管理社員のみ） | 登録 API（初回所蔵作成） | 追加画面 / ヘッダー導線 |
+| F-02b | 書誌更新（管理社員のみ） | 更新 API | 編集画面 / 管理操作 |
+| F-02c | 書誌削除（管理社員のみ） | 削除 API | 削除操作 / 確認 UI |
+| F-04 | 貸出 / 返却 + 所蔵 status 連動 | 一括貸出 API（`bookCopyIds`） | checkout UI / 返却 |
 | F-05 | 貸出中一覧（利用者情報つき） | `GET /api/loans/active` | 貸出中一覧 UI |
 | F-06 | 利用者登録・更新・削除 | Keycloak Admin API 連携, `users` テーブル連携 | 利用者管理画面 |
 | F-07 | `docker compose up` | Compose 全体 | フロント dev 手順 |
 
 - [x] F-01 Keycloak ログイン（ロール: `general_user` / `general_employee` / `admin_employee`）— フロント SPA 認証・認可済み。API Bearer 注入は F-02 前
-- [ ] F-02 蔵書一覧・詳細表示
-- [ ] F-02a 蔵書追加（管理社員のみ）
-- [ ] F-02b 蔵書更新（管理社員のみ）
-- [ ] F-02c 蔵書削除（管理社員のみ）
-- [ ] F-04 書籍の貸出・返却（`loans` レコード作成 + `books.stock_count` 減算/加算）
+- [ ] F-02 書誌一覧・詳細表示（所蔵状態つき）
+- [ ] F-02a 書誌追加（管理社員のみ・初回所蔵冊数）
+- [ ] F-02b 書誌更新（管理社員のみ）
+- [ ] F-02c 書誌削除（管理社員のみ・貸出中所蔵があれば 409）
+- [ ] F-04 一括貸出・返却（`bookCopyIds` + 所蔵 status 連動・checkout UI）
 - [ ] F-05 貸出中一覧（利用者情報つき）
 - [ ] F-06 利用者登録・更新・削除（Keycloak 管理。社員は対象外）
 - [ ] F-07 デモ環境の Docker 一括起動
 
 #### F-04 貸出フロー（MVP-A）
 
-一般社員以上のユーザーがアプリ上で貸出対象ユーザーと書籍を選択して「貸出」を操作すると、次の処理を行う。
+一般社員以上のユーザーが `/loans/checkout` で利用者と所蔵を選び「貸出」すると、次の処理を行う。詳細は [docs/refactor-holdings-and-checkout.md](docs/refactor-holdings-and-checkout.md)。
 
-1. React SPA が `POST /api/loans`（body: `{ bookId, userId }`）を呼び出す
-2. API が貸出対象ユーザーと書籍の存在、在庫数を確認する
-3. API が `loans` テーブルにレコードを作成（`status=BORROWED`, `borrowed_at` 記録）
-4. API が `books.stock_count` を 1 減算（在庫連動）
-5. 返却時は `PUT /api/loans/{id}/return` で `returned_at` 更新 + `stock_count` 加算
+1. React SPA が `POST /api/loans`（body: `{ userId, bookCopyIds }`）を呼び出す
+2. API が利用者と各所蔵（`book_copies`）の存在・`AVAILABLE` を確認する（行ロック）
+3. 同一 TX で各所蔵を `LOANED`、`loans` を件数分作成（`status=BORROWED`）
+4. 1 件でも不可なら 409 で全体ロールバック
+5. 返却時は `PUT /api/loans/{id}/return` で `RETURNED` 更新 + 所蔵を `AVAILABLE` に戻す
 
 | データ | 役割 |
 |--------|------|
-| `books.stock_count` | 貸出可能な冊数（在庫） |
-| `loans` | 誰がいつどの本を借りたか（貸出履歴・状態管理） |
+| `books` | 書誌（タイトル単位） |
+| `book_copies` | 所蔵 1 冊（`AVAILABLE` / `LOANED`）。貸出可能冊数はここから集計 |
+| `loans` | 誰がいつどの所蔵を借りたか（`book_copy_id`） |
 | `users.keycloak_sub` | Keycloak ユーザーと貸出履歴の紐付け |
-
-> 学習用ミニアプリの借りるボタン（フロントのみの `useState`）は Day 14〜18 で本 API に置き換える。
 
 ### MVP-B（Stretch・Day 18 Go 後）
 
@@ -180,31 +179,33 @@
 
 | テーブル | カラム |
 |----------|--------|
-| `books` | id, title, author, isbn, stock_count, deleted, created_at |
+| `books` | id, title, author, isbn, deleted, created_at |
+| `book_copies` | id, book_id, status（AVAILABLE / LOANED） |
 | `users` | id, keycloak_sub, display_name, email, is_active, updated_at |
-| `loans` | id, book_id, user_id, borrowed_at, returned_at, status |
+| `loans` | id, book_copy_id, user_id, borrowed_at, returned_at, status（BORROWED / RETURNED） |
 
-`users` は貸出対象の利用者（`general_user`）のみを保持する参照テーブルで、認証・ロール管理の正は Keycloak とする。社員・管理社員は `users` に登録せず、Keycloak 管理コンソールで管理する。ロールは Keycloak（JWT）で判定するため `users` に `role` カラムは持たない。`loans` は貸出履歴・状態管理用で、`loans.user_id` は利用者を指す。F-04 の貸出操作でレコードが作成される。`books.stock_count` は在庫数（冊数）を表し、役割が異なる。
+`users` は貸出対象の利用者（`general_user`）のみを保持する参照テーブルで、認証・ロール管理の正は Keycloak とする。社員・管理社員は `users` に登録せず、Keycloak 管理コンソールで管理する。ロールは Keycloak（JWT）で判定するため `users` に `role` カラムは持たない。`books` は書誌、`book_copies` は所蔵 1 冊である。貸出可能冊数は `stock_count` カラムではなく所蔵の集計で表す。`loans` は所蔵（`book_copy_id`）と利用者を紐づける。ER の詳細は [docs/er-diagram.md](docs/er-diagram.md)。
 
-蔵書削除は **論理削除**（`books.deleted=true`。Flyway `V3` でカラム追加済み）とする。利用者削除は **論理削除**（`users.is_active=false`）とする。物理削除すると `loans` から辿る過去の貸出履歴が壊れるため、行は残す。利用者削除時はあわせて Keycloak 側のユーザーを無効化（`enabled=false`）する。利用者一覧の通常表示は `is_active=true` のみ、蔵書一覧の通常表示は `deleted=false` のみとし、貸出履歴では無効化・削除済みも参照できるようにする。貸出中の利用者は削除不可（`409`）。
+書誌削除は **論理削除**（`books.deleted=true`）とする。貸出中所蔵（`LOANED`）がある書誌は削除不可（`409`）。利用者削除は **論理削除**（`users.is_active=false`）＋ Keycloak 無効化とする。利用者一覧の通常表示は `is_active=true` のみ、書誌一覧の通常表示は `deleted=false` のみとする。貸出中の利用者は削除不可（`409`）。
 
 ## API エンドポイント
 
 | Method | Path | 説明 | 権限 |
 |--------|------|------|------|
-| GET | `/api/books` | 蔵書一覧（MVP-A: 全件 / MVP-B: `?page=` `?size=` でページング、`?q=` で検索） | 一般社員・管理社員 |
-| GET | `/api/books/{id}` | 蔵書詳細 | 一般社員・管理社員 |
-| POST | `/api/books` | 蔵書追加 | 管理社員のみ |
-| PUT | `/api/books/{id}` | 蔵書更新 | 管理社員のみ |
-| DELETE | `/api/books/{id}` | 蔵書削除（論理削除 `deleted=true`） | 管理社員のみ |
+| GET | `/api/books` | 書誌一覧（`totalCount` / `availableCount`。MVP-B: ページング・検索） | 一般社員・管理社員 |
+| GET | `/api/books/{id}` | 書誌詳細（`holdings` つき） | 一般社員・管理社員 |
+| POST | `/api/books` | 書誌追加（`initialCopyCount` で所蔵作成） | 管理社員のみ |
+| PUT | `/api/books/{id}` | 書誌更新（冊数フィールドなし） | 管理社員のみ |
+| POST | `/api/books/{id}/copies` | 所蔵 1 冊追加 | 管理社員のみ |
+| DELETE | `/api/books/{id}` | 書誌削除（論理削除。貸出中所蔵があれば 409） | 管理社員のみ |
 | GET | `/api/users` | 利用者一覧（`general_user` のみ） | 一般社員・管理社員 |
 | GET | `/api/users/{id}` | 利用者詳細 | 一般社員・管理社員 |
 | POST | `/api/users` | 利用者登録（氏名・メールのみ。初回パスワードは API 生成 + Keycloak temporary。ロールは `general_user` 固定） | 一般社員・管理社員 |
 | PUT | `/api/users/{id}` | 利用者更新（Keycloak + アプリ DB） | 一般社員・管理社員 |
 | DELETE | `/api/users/{id}` | 利用者削除（論理削除 + Keycloak 無効化。貸出中は削除不可） | 一般社員・管理社員 |
-| POST | `/api/loans` | 貸出（body: `{ bookId, userId }`） | 一般社員・管理社員 |
+| POST | `/api/loans` | 一括貸出（body: `{ userId, bookCopyIds }`） | 一般社員・管理社員 |
 | PUT | `/api/loans/{id}/return` | 返却 | 一般社員・管理社員 |
-| GET | `/api/loans/active` | 貸出中一覧（ユーザー情報つき） | 一般社員・管理社員 |
+| GET | `/api/loans/active` | 貸出中一覧（ユーザー・書誌・bookCopyId つき） | 一般社員・管理社員 |
 
 ページング API の詳細は [docs/openapi-notes.md](docs/openapi-notes.md) を参照。
 
@@ -215,10 +216,10 @@
 | ロール | ヘッダー表示 |
 |--------|--------------|
 | 利用者 | バックオフィス画面は対象外 |
-| 一般社員 | 蔵書一覧、利用者管理、貸出中一覧、ログアウト |
-| 管理社員 | 蔵書一覧、利用者管理、貸出中一覧、蔵書追加、管理メニュー、ログアウト |
+| 一般社員 | 書誌一覧、貸出、貸出中一覧、利用者管理、ログアウト |
+| 管理社員 | 書誌一覧、貸出、貸出中一覧、利用者管理、書誌追加、管理メニュー、ログアウト |
 
-管理社員向けの蔵書更新・削除は、蔵書一覧または詳細画面の管理社員専用操作として表示する。
+管理社員向けの書誌更新・削除・所蔵追加は、書誌詳細または編集画面の管理社員専用操作として表示する。貸出は `/loans/checkout` から行う。
 
 ---
 
@@ -285,7 +286,7 @@
 | 7 | OpenAPI（books, loans）、画面一覧・遷移図 |
 | 8 | 設計レビュー、Docker 構成図、MVP-B 優先順位確定 |
 
-**画面（7〜8枚）**: ログイン、蔵書一覧、蔵書詳細、利用者一覧、利用者登録/編集、貸出中一覧、蔵書追加、蔵書編集、管理社員向け操作導線
+**画面**: ログイン、書誌一覧、書誌詳細、書誌追加/編集、利用者一覧、利用者登録/編集、貸出 checkout、貸出中一覧、管理社員向け操作導線
 
 ### Phase 4 — 実装（Day 9〜28）
 
@@ -369,7 +370,7 @@ npm run dev
 | ロール | ユーザー名 | 用途 |
 |--------|------------|------|
 | `admin_employee` | `admin_test@example.com` | 蔵書追加・更新・削除、利用者管理、貸出・返却 |
-| `general_employee` | `employee_test@example.com` | 蔵書一覧・詳細、利用者管理、貸出・返却 |
+| `general_employee` | `employee_test@example.com` | 書誌一覧・詳細、利用者管理、貸出・返却 |
 | `general_user` | `user_test@example.com` | 貸出対象の利用者サンプル（SPA 利用不可） |
 
 ---
