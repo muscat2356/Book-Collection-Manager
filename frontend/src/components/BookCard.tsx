@@ -14,7 +14,10 @@ export function BookCard({ book }: BookCardProps) {
         <div className="book-card__header">
           <h2 className="book-card__title">{book.title}</h2>
         </div>
-        <StockBadge stockCount={book.stockCount}/>
+        <StockBadge
+          availableCount={book.availableCount}
+          totalCount={book.totalCount}
+        />
         <dl className="book-card__meta">
           <dt>著者</dt>
           <dd>著者：{book.author}</dd>
