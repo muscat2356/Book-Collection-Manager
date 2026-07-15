@@ -23,5 +23,4 @@ public interface BookCopyRepository extends JpaRepository<BookCopy, Long> {
 
     long countByBookId(Long bookId);
 
-    long countByBookIdAndAtatus(Long bookId, CopyStatus status);
-}
+    long countByBookIdAndStatus(Long bookId, CopyStatus status);}
