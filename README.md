@@ -196,7 +196,8 @@
 | GET | `/api/books/{id}` | 書誌詳細（`holdings` つき） | 一般社員・管理社員 |
 | POST | `/api/books` | 書誌追加（`initialCopyCount` で所蔵作成） | 管理社員のみ |
 | PUT | `/api/books/{id}` | 書誌更新（冊数フィールドなし） | 管理社員のみ |
-| POST | `/api/books/{id}/copies` | 所蔵 1 冊追加 | 管理社員のみ |
+| POST | `/api/books/{id}/copies` | 所蔵 1 冊追加（編集画面） | 管理社員のみ |
+| DELETE | `/api/books/{id}/copies/{copyId}` | 所蔵 1 冊削除（AVAILABLE のみ。編集画面） | 管理社員のみ |
 | DELETE | `/api/books/{id}` | 書誌削除（論理削除。貸出中所蔵があれば 409） | 管理社員のみ |
 | GET | `/api/users` | 利用者一覧（`general_user` のみ） | 一般社員・管理社員 |
 | GET | `/api/users/{id}` | 利用者詳細 | 一般社員・管理社員 |

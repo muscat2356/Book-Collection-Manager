@@ -7,7 +7,7 @@
 - Keycloak ログインと JWT 取得
 - Spring Boot API への Bearer JWT 付きリクエスト
 - 書誌一覧・詳細（所蔵状態つき）の参照
-- 管理社員による書誌追加・更新・削除、所蔵追加
+- 管理社員による書誌追加・更新・削除、所蔵追加・所蔵削除
 - 一般社員以上による利用者登録・更新・削除（対象は利用者のみ）
 - checkout からの複数所蔵一括貸出と返却（所蔵 status 連動）
 - 貸出中一覧での利用者把握
@@ -31,7 +31,7 @@ MVP-B の検索・ページング、将来検討の延滞バッチはメイン�
 |--------|--------------------|
 | `general_user` | 貸出対象の利用者。バックオフィス画面の操作は対象外（Keycloak + アプリ DB で管理） |
 | `general_employee` | 書誌一覧・詳細、利用者管理、checkout 貸出、返却、貸出中一覧（Keycloak コンソールで管理） |
-| `admin_employee` | 一般社員の機能 + 書誌追加・更新・削除・所蔵追加（Keycloak コンソールで管理） |
+| `admin_employee` | 一般社員の機能 + 書誌追加・更新・削除・所蔵追加/削除（Keycloak コンソールで管理） |
 
 ## 全体シーケンス
 
@@ -73,10 +73,10 @@ sequenceDiagram
     end
 
     alt 管理社員 admin_employee
-        Employee->>ReactSPA: 書誌追加・更新・削除・所蔵追加を操作
-        ReactSPA->>SpringAPI: POST /api/books または PUT /api/books/{id} または POST /api/books/{id}/copies または DELETE /api/books/{id}
+        Employee->>ReactSPA: 書誌編集画面で書誌・所蔵を操作
+        ReactSPA->>SpringAPI: POST/PUT/DELETE /api/books または POST/DELETE /api/books/{id}/copies...
         SpringAPI->>SpringAPI: JWT と admin_employee ロールを検証
-        SpringAPI->>PostgreSQL: books / book_copies を追加・更新・論理削除
+        SpringAPI->>PostgreSQL: books / book_copies を追加・更新・削除・論理削除
         PostgreSQL-->>SpringAPI: 更新結果
         SpringAPI-->>ReactSPA: 201 Created または 200 OK または 204 No Content
         ReactSPA-->>Employee: 管理操作の結果を表示
@@ -171,6 +171,7 @@ sequenceDiagram
 | 書誌追加 | `POST /api/books` | `admin_employee` |
 | 書誌更新 | `PUT /api/books/{id}` | `admin_employee` |
 | 所蔵追加 | `POST /api/books/{id}/copies` | `admin_employee` |
+| 所蔵削除 | `DELETE /api/books/{id}/copies/{copyId}` | `admin_employee` |
 | 書誌削除 | `DELETE /api/books/{id}` | `admin_employee` |
 | 利用者一覧 | `GET /api/users` | `general_employee` / `admin_employee` |
 | 利用者詳細 | `GET /api/users/{id}` | `general_employee` / `admin_employee` |

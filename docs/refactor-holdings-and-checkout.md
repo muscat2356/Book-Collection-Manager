@@ -122,7 +122,8 @@ erDiagram
 | Book | `stockCount` | `totalCount` + `availableCount`（詳細は `holdings`） |
 | 貸出 POST | `{ bookId, userId }` 単件 | `{ userId, bookCopyIds }` 一括 |
 | 在庫 | `stock_count` 加減算 | copy status 更新 |
-| 新規 | — | `POST /api/books/{id}/copies` |
+| 新規 | — | `POST /api/books/{id}/copies`（所蔵追加） |
+| 新規 | — | `DELETE /api/books/{id}/copies/{copyId}`（所蔵削除・編集画面） |
 | future の `/loans/batch` | 参考案 | 不採用 |
 
 ### 4.3 [screen-transition.md](./screen-transition.md)
@@ -130,7 +131,8 @@ erDiagram
 | 項目 | 現行 | 変更後 |
 |------|------|--------|
 | `/books` | 蔵書一覧 | 書誌一覧 |
-| `/books/:id` | 貸出・返却あり | 所蔵表示のみ |
+| `/books/:id` | 貸出・返却あり | **所蔵一覧テーブル表示**（閲覧のみ） |
+| `/books/:id/edit` | 書誌更新・削除 | **所蔵追加/削除** + 書誌更新・書誌削除 |
 | ナビ | 蔵書 / 利用者 / 貸出中 | **貸出（checkout）追加** |
 | 新規 | — | `/loans/checkout/*` |
 | 「詳細内で貸出完結」 | あり | 削除（checkout に統一） |
@@ -170,8 +172,9 @@ erDiagram
 
 ```mermaid
 flowchart LR
-    List["/books 書誌一覧"] --> Detail["/books/:id 詳細"]
-    Detail -->|"所蔵は表示のみ"| Detail
+    List["/books 書誌一覧"] --> Detail["/books/:id 詳細 所蔵一覧"]
+    Detail -->|"編集 admin"| Edit["/books/:id/edit 所蔵追加削除"]
+    Edit --> Detail
     Nav["ナビ: 貸出"] --> Checkout["/loans/checkout"]
     Checkout -->|"bookCopyIds"| Active["/loans/active"]
 ```
@@ -179,7 +182,8 @@ flowchart LR
 | パス | 役割 | 通常/checkout |
 |------|------|----------------|
 | `/books` | 書誌カード（所蔵数・貸出可能数） | 通常 |
-| `/books/:id` | 書誌 + 所蔵一覧（表示のみ） | 通常 |
+| `/books/:id` | 書誌 + **所蔵一覧テーブル**（閲覧のみ） | 通常 |
+| `/books/:id/edit` | 書誌フォーム + **所蔵の追加/削除**（admin） | 通常 |
 | `/loans/checkout` | 利用者選択 | checkout |
 | `/loans/checkout/books` | BookList 同型カード | checkout |
 | `/loans/checkout/books/:id` | 詳細 + AVAILABLE 所蔵の複数選択 | checkout |
@@ -498,7 +502,7 @@ export type Book = {
 
 ### 6.5 POST /api/books/{id}/copies（新規・admin）
 
-所蔵を 1 冊追加する。
+所蔵を 1 冊追加する。書誌編集画面（`/books/:id/edit`）から呼ぶ。
 
 **Request**
 
@@ -528,7 +532,35 @@ export type Book = {
 
 ---
 
-### 6.6 DELETE /api/books/{id}（論理削除・admin）
+### 6.6 DELETE /api/books/{id}/copies/{copyId}（新規・admin）
+
+所蔵を 1 冊削除する。既存の `DELETE /api/books/{id}`（書誌論理削除）とは別。編集画面から呼ぶ。
+
+**Response 204**
+
+```json
+{}
+```
+
+**Response 409**
+
+```json
+{
+  "error": "COPY_NOT_DELETABLE",
+  "message": "貸出中、または貸出履歴がある所蔵のため削除できません"
+}
+```
+
+| 条件 | 結果 |
+|------|------|
+| `AVAILABLE` かつ loans なし | 204（行削除） |
+| `LOANED` | 409 |
+| 過去 loans があり FK RESTRICT | 409 |
+| 所蔵一覧の再表示 | 既存 `GET /api/books/{id}` を再利用 |
+
+---
+
+### 6.7 DELETE /api/books/{id}（論理削除・admin）
 
 パス・204 は現行どおり。衝突条件を copy 基準に明確化。
 
@@ -554,7 +586,7 @@ export type Book = {
 
 ---
 
-### 6.7 POST /api/loans（F-04・一括）
+### 6.8 POST /api/loans（F-04・一括）
 
 **現行 Request**
 
@@ -639,7 +671,7 @@ export type Book = {
 
 ---
 
-### 6.8 PUT /api/loans/{id}/return
+### 6.9 PUT /api/loans/{id}/return
 
 **現行 Response 200**
 
@@ -677,7 +709,7 @@ export type Book = {
 
 ---
 
-### 6.9 GET /api/loans/active
+### 6.10 GET /api/loans/active
 
 **現行 Response 200**
 
@@ -732,7 +764,7 @@ export type Book = {
 
 ---
 
-### 6.10 変更しない API
+### 6.11 変更しない API
 
 利用者 CRUD（`/api/users`）、認証、エラー共通仕様の骨格は変更しない（F-06 独立）。
 
@@ -744,9 +776,9 @@ export type Book = {
 |-------|------|---|---|
 | **0** | 設計 docs を本案に更新 | ○ | ○ |
 | **1** | Flyway（book_copies / book_copy_id / stock_count 削除） | **主** | — |
-| **2** | Book 集計・holdings・copies・Loan 一括/返却/active | **主** | 契約確認 |
-| **3** | 書誌 UI・checkout・LoanProvider・詳細から貸出削除 | 契約固定 | **主** |
-| **4** | admin：initialCopyCount・所蔵追加・削除 409 | ○ | ○ |
+| **2** | Book 集計・holdings・copies 追加/削除・Loan 一括/返却/active | **主** | 契約確認 |
+| **3** | 書誌 UI（詳細=所蔵一覧、編集=所蔵追加削除）・checkout・LoanProvider | 契約固定 | **主** |
+| **4** | admin：initialCopyCount・編集画面での所蔵追加/削除・書誌削除 409 | ○ | ○ |
 
 推奨順: **0 → 1 → 2 → 3**（Loan 未実装のうちに切替）。F-06 は並行可。
 
@@ -807,7 +839,8 @@ Optional<BookCopy> findByIdForUpdate(@Param("id") Long id);
 
 書誌作成: `initialCopyCount` 件の AVAILABLE を insert。  
 `POST .../copies`: AVAILABLE を 1 件。  
-論理削除: `count(LOANED)>0` なら 409。
+`DELETE .../copies/{copyId}`: AVAILABLE かつ履歴なしのみ。LOANED / 履歴ありは 409。  
+書誌論理削除: `count(LOANED)>0` なら 409。
 
 ### 8.2 Frontend（Member B）
 

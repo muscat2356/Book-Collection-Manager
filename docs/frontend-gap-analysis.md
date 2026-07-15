@@ -12,9 +12,9 @@ Member B 向け。`LibraShare/frontend/` の**現状**と、確定設計（[scre
 |------|------|------|----------|------|
 | 済 | `/` | `/books` へリダイレクト | 同左 | なし |
 | 済 | `/books` | 実装済み（mock・旧 stockCount） | 書誌一覧（total/available） | API + 型・表示更新（F-02） |
-| 済 | `/books/:id` | 貸出 UI あり（mock） | 所蔵状態**表示のみ**（貸出なし） | 貸出 UI 削除 + holdings（F-02） |
+| 済 | `/books/:id` | 貸出 UI あり（mock） | **所蔵一覧テーブル表示**（閲覧のみ・貸出なし） | 貸出 UI 削除 + `GET` holdings（F-02） |
 | 済 | `/books/new` | 実装済み（mock） | `initialCopyCount` つき書誌追加 | API 接続（F-02a） |
-| 済 | `/books/:id/edit` | 実装済み（mock） | 書誌更新・論理削除・所蔵追加 | API 接続（F-02b/c） |
+| 済 | `/books/:id/edit` | 実装済み（mock） | 書誌更新・**所蔵追加/削除**・書誌論理削除 | `PUT` / `POST copies` / `DELETE copies/{copyId}` / `DELETE books` |
 | 未 | `/loans/checkout` | **なし** | 利用者選択 | 新規（F-04） |
 | 未 | `/loans/checkout/books` | **なし** | 書誌カード + 選択中サマリ | 新規（F-04） |
 | 未 | `/loans/checkout/books/:id` | **なし** | 所蔵複数選択 | 新規（F-04） |
@@ -35,9 +35,9 @@ Member B 向け。`LibraShare/frontend/` の**現状**と、確定設計（[scre
 | ファイル | 状態 | 確定設計との差分 |
 |----------|------|------------------|
 | `BookListPage.tsx` | 実装済み | mock・`stockCount`。書誌集計表示へ |
-| `BookDetailPage.tsx` | 実装済み | **貸出 UI 削除**。holdings 表示 + admin 所蔵追加導線 |
+| `BookDetailPage.tsx` | 実装済み | **貸出 UI 削除**。所蔵一覧表示。admin は編集へのみ誘導 |
 | `BookCreatePage.tsx` | 実装済み | `initialCopyCount` 入力へ |
-| `BookEditPage.tsx` | 実装済み | 冊数手入力廃止。所蔵追加・削除 409 |
+| `BookEditPage.tsx` | 実装済み | 冊数手入力廃止。所蔵一覧 + 追加/削除（LOANED は削除不可）+ 書誌削除 |
 | checkout 系ページ | **未作成** | `LoanProvider` + サマリ + 確認（F-04） |
 | `UserListPage.tsx` 等 | 実装済み | mock。API 接続（F-06） |
 | `LoanBookListPage.tsx` | 実装済み | mock。`bookCopyId` 対応・返却（F-05） |
@@ -51,7 +51,7 @@ Member B 向け。`LibraShare/frontend/` の**現状**と、確定設計（[scre
 |----------|------|------------------|
 | `Layout.tsx` | **済** | ナビに **貸出**（`/loans/checkout`）追加 |
 | `ProtectedRoute.tsx` | **済** | 大きな差分なし |
-| `BookDetail.tsx` | 実装済み | 利用者選択・貸出 mock を削除。holdings 表示 |
+| `BookDetail.tsx` | 実装済み | 利用者選択・貸出 mock を削除。所蔵一覧（閲覧） |
 | `BookCard.tsx` | 実装済み | `availableCount` / `totalCount` 表示 |
 | `StockBadge.tsx` | 実装済み | available 集計表示に合わせる |
 | `LoanProvider` / 選択中サマリ | **未作成** | checkout 専用 Context（F-04） |
@@ -75,7 +75,7 @@ Member B 向け。`LibraShare/frontend/` の**現状**と、確定設計（[scre
 | ファイル | 状態 | 確定設計との差分 |
 |----------|------|------------------|
 | `client.ts` | 雛形あり | Keycloak `access_token` 注入（F-02 前） |
-| `books.ts` | mock | 書誌 CRUD + `POST .../copies`。`stockCount` 廃止 |
+| `books.ts` | mock | 書誌 CRUD + `POST/DELETE .../copies`。`stockCount` 廃止 |
 | `users.ts` | mock | 利用者 CRUD |
 | `loans.ts` | mock・単件 `bookId` | `createLoans(userId, bookCopyIds)`、active に `bookCopyId` |
 
@@ -109,9 +109,9 @@ Member B 向け。`LibraShare/frontend/` の**現状**と、確定設計（[scre
 | ID | 機能 | 現状 | 残タスク |
 |----|------|------|----------|
 | F-01 | Keycloak + Protected Route | **済**（SPA） | JWT 注入（F-02 前） |
-| F-02 | 書誌一覧・詳細 UI | 部分 | API・holdings・貸出 UI 削除 |
+| F-02 | 書誌一覧・詳細 UI | 部分 | API・所蔵一覧表示・貸出 UI 削除 |
 | F-02a | 書誌追加 UI | 部分 | `initialCopyCount` + API |
-| F-02b | 書誌更新 UI | 部分 | API（冊数なし） |
+| F-02b | 書誌更新 UI | 部分 | API（冊数なし）+ 編集画面の所蔵追加/削除 |
 | F-02c | 書誌削除 UI | 未 | 確認ダイアログ + API + LOANED 409 |
 | F-04 | checkout 一括貸出 | 旧詳細貸出のみ | LoanProvider・checkout 全画面・`bookCopyIds` |
 | F-05 | 貸出中一覧 UI | 部分 | API・`bookCopyId`・返却 |
@@ -126,7 +126,7 @@ Member B 向け。`LibraShare/frontend/` の**現状**と、確定設計（[scre
 1. ~~Keycloak JS + ProtectedRoute + Layout（F-01）~~ **済**
 2. `api/client.ts` の Keycloak トークン注入
 3. 書誌 API 接続（F-02）— 型・一覧・詳細（holdings）・詳細から貸出削除
-4. 書誌 CRUD（F-02a/b/c）+ 所蔵追加
+4. 書誌 CRUD（F-02a/b/c）+ 編集画面での所蔵追加/削除
 5. 利用者管理 API（F-06）
 6. checkout + 一括貸出（F-04）→ 貸出中一覧（F-05）
 7. MVP-B（F-03, F-11, F-10）
