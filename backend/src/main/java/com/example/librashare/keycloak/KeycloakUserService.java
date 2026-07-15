@@ -24,13 +24,14 @@ public class KeycloakUserService {
      * @param email
      * @return　keycloakUserのID（DB登録で使用するため）
      */
-    public String createUser(String username, String email){
+    public String createUser(String email){
 
         //keycloak接続立ち上げ
         Keycloak keycloak = buildKeycloak();
         
         //ユーザー情報を表すオブジェクトの生成
         UserRepresentation user = new UserRepresentation();
+        user.setUsername(email);
         user.setEmail(email);
         user.setEnabled(true);
         //ユーザーアクティブのON設定

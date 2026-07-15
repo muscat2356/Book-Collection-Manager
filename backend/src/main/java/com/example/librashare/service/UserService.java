@@ -55,7 +55,7 @@ public class UserService {
     @Transactional
     public User create(String email,String displayName){
 
-        String sub = keycloakUserService.createUser(displayName, email);
+        String sub = keycloakUserService.createUser(email);
         User user = new User(sub, displayName, email);
 
         return userRepository.save(user);
@@ -64,7 +64,6 @@ public class UserService {
 
     /**
      * 該当ユーザーの更新処理service側
-     * @param id
      * @param id, displayName,　email
      * @return　ユーザー情報の送信
      */

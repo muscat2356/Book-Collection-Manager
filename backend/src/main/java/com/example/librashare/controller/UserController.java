@@ -99,7 +99,7 @@ public class UserController {
     @PreAuthorize("hasAnyRole('general_employee','admin_employee')")
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserRequest userRequest){
         
-        User user = userService.create(userRequest.getDisplayName(), userRequest.getEmail());
+        User user = userService.create(userRequest.getEmail(), userRequest.getDisplayName());
         
         UserResponse response = new UserResponse();
         response.setId(user.getId());
