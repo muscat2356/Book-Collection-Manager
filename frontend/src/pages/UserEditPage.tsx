@@ -52,7 +52,10 @@ export function UserEditPage(){
 
         fetchUserById(apiClient, id)
             .then((data) => {
-                if (!data) return
+                if (!data) {
+                    setError("利用者が見つかりません")
+                    return
+                }
                 setUser(data);
                 setFormData({
                     displayName:data.displayName,
