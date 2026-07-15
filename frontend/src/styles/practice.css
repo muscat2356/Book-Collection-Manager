@@ -111,32 +111,167 @@ button.nav-link {
   cursor: pointer;
 }
 
+.btn--danger {
+  background: #c53030;
+  color: #fff;
+  border: 1px solid #c53030;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: #9b2c2c;
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* 在庫（簡易） */
+/* 所蔵状況（貸出可能 / 所蔵総数） */
 .stock-indicator {
   border: 1px solid #ddd;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
   font-size: 0.875rem;
+  border-radius: 4px;
+}
+
+.stock-indicator--available {
+  background: #f0fff4;
+  border-color: #c6f6d5;
+}
+
+.stock-indicator--low {
+  background: #fffaf0;
+  border-color: #fbd38d;
 }
 
 .stock-indicator--out {
-  background: #fee;
+  background: #fff5f5;
+  border-color: #feb2b2;
+}
+
+.stock-indicator__label {
+  margin: 0 0 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #718096;
+}
+
+.stock-indicator__count {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  margin: 0 0 0.35rem;
+}
+
+.stock-indicator__number {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.stock-indicator--available .stock-indicator__number {
+  color: #276749;
+}
+
+.stock-indicator--low .stock-indicator__number {
+  color: #c05621;
+}
+
+.stock-indicator--out .stock-indicator__number {
+  color: #c53030;
+}
+
+.stock-indicator__unit {
+  font-weight: 600;
+}
+
+.stock-indicator__max {
+  font-size: 0.8rem;
+  color: #718096;
 }
 
 .stock-indicator__bar {
   height: 4px;
   background: #eee;
   margin: 0.25rem 0;
+  border-radius: 999px;
+  overflow: hidden;
 }
 
 .stock-indicator__fill {
   height: 100%;
-  background: #999;
+  background: #718096;
+}
+
+.stock-indicator--available .stock-indicator__fill {
+  background: #38a169;
+}
+
+.stock-indicator--low .stock-indicator__fill {
+  background: #dd6b20;
+}
+
+.stock-indicator--out .stock-indicator__fill {
+  background: #e53e3e;
+}
+
+.stock-indicator__status {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* 所蔵一覧テーブル */
+.holdings {
+  margin: 1rem 0 0.5rem;
+}
+
+.holdings__title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.holdings__empty {
+  margin: 0;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.holdings__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.holdings__table th,
+.holdings__table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.holdings__table th {
+  font-size: 0.7rem;
+  color: #718096;
+  background: #f7fafc;
+}
+
+.holdings__status {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.holdings__status--available {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+.holdings__status--loaned {
+  background: #e2e8f0;
+  color: #4a5568;
 }
 
 .placeholder-page {

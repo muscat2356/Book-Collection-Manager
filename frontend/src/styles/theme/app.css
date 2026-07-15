@@ -279,6 +279,16 @@ button.nav-link:hover {
   background: var(--border);
 }
 
+.btn--danger {
+  background: var(--danger-text);
+  color: #fff;
+  border: 1px solid transparent;
+}
+
+.btn--danger:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -442,6 +452,81 @@ button.nav-link:hover {
 .book-detail p strong {
   color: var(--text-h);
   font-weight: 600;
+}
+
+/* ===== 所蔵一覧（書誌詳細） ===== */
+
+.holdings {
+  margin: 1.25rem 0 0.5rem;
+}
+
+.holdings__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0 0 0.65rem;
+}
+
+.holdings__empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.holdings__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.holdings__table th,
+.holdings__table td {
+  text-align: left;
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.holdings__table th {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.holdings__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.holdings__status {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.holdings__status--available {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+.holdings__status--loaned {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+@media (prefers-color-scheme: dark) {
+  .holdings__table th {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .holdings__status--loaned {
+    background: rgba(160, 174, 192, 0.2);
+    color: #cbd5e0;
+  }
 }
 
 .back-link {

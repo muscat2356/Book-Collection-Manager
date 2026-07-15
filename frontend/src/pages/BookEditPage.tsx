@@ -164,7 +164,7 @@ export function BookEditPage(){
 
                 <button
                  type="button"
-                 className="btn btn--secondary"
+                 className="btn btn--danger"
                  onClick={handleDelete}
                  disabled={submitting || deleting}
                 >
