@@ -2,12 +2,17 @@ package com.example.librashare.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.librashare.domain.Book;
+import com.example.librashare.domain.BookCopy;
+import com.example.librashare.domain.CopyStatus;
 import com.example.librashare.dto.request.BookRequest;
 import com.example.librashare.dto.response.BookResponse;
+import com.example.librashare.repository.BookCopyRepository;
 import com.example.librashare.repository.BookRepository;
 
 import jakarta.transaction.Transactional;
@@ -24,9 +29,12 @@ import jakarta.transaction.Transactional;
 public class BookService {
 
     private final BookRepository bookRepository;
+    private final BookCopyRepository copyRepository;
 
-    public BookService(BookRepository bookRepository) {
+    @Autowired
+    public BookService(BookRepository bookRepository, BookCopyRepository copyRepository) {
         this.bookRepository = bookRepository;
+        this.copyRepository = copyRepository;
     }
 
     /**
@@ -53,14 +61,23 @@ public class BookService {
      */
     public Long createBook(BookRequest request) {
         Book book = new Book();
-        
         book.setTitle(request.getTitle());
         book.setAuthor(request.getAuthor());
         book.setIsbn(request.getIsbn());
-        book.setStockCount(request.getStockCount());
-
         Book saved = bookRepository.save(book);
+
+        // Optionlで包んで値を確認、nullの場合は0をセット
+        int copies = Optional.ofNullable(request.getInitialCopyCount()).orElse(0);
+
+        List<BookCopy> newCopies = IntStream.range(0, copies)
+        .mapToObj(i -> new BookCopy(null, saved.getId(), CopyStatus.AVAILABLE))
+        .toList();
+
+        copyRepository.saveAll(newCopies);
+
         return saved.getId();
+
+
     }
 
     /**
@@ -85,7 +102,6 @@ public class BookService {
         book.setTitle(request.getTitle());
         book.setAuthor(request.getAuthor());
         book.setIsbn(request.getIsbn());
-        book.setStockCount(request.getStockCount());
 
        Book saved = bookRepository.save(book);
        
@@ -102,7 +118,7 @@ public class BookService {
      */
     private BookResponse toResponse(Book book) {
     return new BookResponse(book.getId(), book.getTitle(), book.getAuthor(),
-            book.getIsbn(), book.getStockCount());
+            book.getIsbn());
     }
 
     /**

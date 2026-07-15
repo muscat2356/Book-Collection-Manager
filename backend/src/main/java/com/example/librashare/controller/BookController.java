@@ -77,8 +77,7 @@ public class BookController {
                 bookId,
                 bookRequest.getTitle(),
                 bookRequest.getAuthor(),
-                bookRequest.getIsbn(),
-                bookRequest.getStockCount());
+                bookRequest.getIsbn());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

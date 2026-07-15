@@ -13,14 +13,12 @@ public class BookResponse {
     private String title;
     private String author;
     private String isbn;
-    private Integer stockCount;
     
-    public BookResponse(Long id, String title, String author, String isbn, Integer stockCount) {
+    public BookResponse(Long id, String title, String author, String isbn) {
         this.id = id;
         this.title = title;
         this.author = author;
         this.isbn = isbn;
-        this.stockCount = stockCount;
     }
 
 
@@ -48,17 +46,5 @@ public class BookResponse {
     public void setIsbn(String isbn) {
         this.isbn = isbn;
     }
-    public Integer getStockCount() {
-        return stockCount;
-    }
-    public void setStockCount(Integer stockCount) {
-        this.stockCount = stockCount;
-    }
-
-
-
-
-
-    
 
 }
