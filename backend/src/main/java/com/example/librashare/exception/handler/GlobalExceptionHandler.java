@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -28,10 +29,19 @@ public class GlobalExceptionHandler {
      * @return　エラーメッセージと400ステータスコードのリターン
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> validationHandler(){
+    public ResponseEntity<ErrorResponse> validationHandler(MethodArgumentNotValidException ex){
 
-        ErrorResponse error = new ErrorResponse("VALIDATION_ERROR", "必須項目の入力または形式の違いがあります。");
+        // 引数でMethodArgumentNotValidException exを受ける
+        // 複数のバリデーションエラーが起きた場合を想定して一番上のエラーを取得する設計
 
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(FieldError::getDefaultMessage)
+                .orElse("入力内容が不正です");
+
+        ErrorResponse error = new ErrorResponse("VALIDATION_ERROR", message);
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
@@ -43,6 +53,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> BusinesHandler(BusinessException e){
 
+        logger.warn(
+            "業務エラーが発生しました。error={}, message={}",
+            e.getError(),
+            e.getMessage()
+        );
+        
         ErrorResponse error = new ErrorResponse(e.getError(), e.getMessage());
 
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
