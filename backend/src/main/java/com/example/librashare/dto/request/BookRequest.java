@@ -13,15 +13,15 @@ public class BookRequest {
     private String title;
     private String author;
     private String isbn;
-    private Integer stockCount;
+    private Integer initialCopyCount;
 
     
     
-    public BookRequest(String title, String author, String isbn, Integer stockCount) {
+    public BookRequest(String title, String author, String isbn, Integer initialCopyCount) {
         this.title = title;
         this.author = author;
         this.isbn = isbn;
-        this.stockCount = stockCount;
+        this.initialCopyCount = initialCopyCount;
     }
     
     public String getTitle() {
@@ -42,14 +42,13 @@ public class BookRequest {
     public void setIsbn(String isbn) {
         this.isbn = isbn;
     }
-    public Integer getStockCount() {
-        return stockCount;
-    }
-    public void setStockCount(Integer stockCount) {
-        this.stockCount = stockCount;
+
+    public Integer getInitialCopyCount() {
+        return initialCopyCount;
     }
 
-    
-
+    public void setInitialCopyCount(Integer initialCopyCount) {
+        this.initialCopyCount = initialCopyCount;
+    }
 
 }

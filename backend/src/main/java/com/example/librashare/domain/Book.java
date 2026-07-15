@@ -36,10 +36,6 @@ public class Book {
     @Column(length = 32)
     private String isbn;
 
-    //在庫数
-    @Column(name = "stock_count", nullable = false)
-    private int stockCount;
-
     //作成日時
     //default.nowで設定されているため、insertとupdateの際にはnullが入力される
     //そのためinsertとupdateを実施にデータを取得する際に、findを実施の上、入力された状態で、
@@ -53,13 +49,12 @@ public class Book {
     }
 
     
-    public Book(Long id, String title, String author, String isbn, int stockCount, OffsetDateTime createdAt,
+    public Book(Long id, String title, String author, String isbn, OffsetDateTime createdAt,
 			boolean deleted) {
 		this.id = id;
 		this.title = title;
 		this.author = author;
 		this.isbn = isbn;
-		this.stockCount = stockCount;
 		this.createdAt = createdAt;
 		this.deleted = deleted;
 	}
@@ -95,14 +90,6 @@ public class Book {
 
     public void setIsbn(String isbn) {
         this.isbn = isbn;
-    }
-
-    public int getStockCount() {
-        return stockCount;
-    }
-
-    public void setStockCount(int stockCount) {
-        this.stockCount = stockCount;
     }
 
     public OffsetDateTime getCreatedAt() {
