@@ -123,8 +123,8 @@ export function UserEditPage(){
 
                 <button
                  type="button"
-                 className="btn btn--primary"
-                 disabled={deleting}
+                 className="btn btn--danger"
+                 disabled={submitting || deleting}
                  onClick={handleDelete} >
                     {submitting || deleting ? '削除中...' : '削除'}
                 </button>
