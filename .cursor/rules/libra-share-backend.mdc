@@ -1,0 +1,69 @@
+---
+description: LibraShare バックエンド規約（Spring / Flyway / Security / API）
+globs: backend/**/*.{java,yml,yaml,sql}
+alwaysApply: false
+---
+
+# バックエンド規約
+
+## 構成
+
+```
+backend/src/main/java/com/example/librashare/
+├── config/        # Security, CORS 等
+├── controller/    # REST（薄い。HTTP・認可アノテーション）
+├── service/       # 業務ロジック・トランザクション
+├── repository/    # Spring Data JPA
+├── domain/        # Entity / Enum
+└── dto/
+    ├── request/   # 入力 DTO（@Valid）
+    └── response/  # 出力 DTO（集計・holdings 等）
+
+backend/src/main/resources/
+├── application.yml
+└── db/migration/  # Flyway（V1, V2, … 順に追加のみ）
+```
+
+## API・データ（確定）
+
+- 書誌 `books` と所蔵 `book_copies` を分離。`books.stock_count` は持たない（集計）
+- 貸出: `POST /api/loans` body `{ userId, bookCopyIds }`（一括・同一 TX）
+- 返却: `PUT /api/loans/{id}/return`（copy を AVAILABLE に戻す）
+- 貸出中: `GET /api/loans/active`（`/loans/me` は作らない）
+- 書誌: 一覧・詳細は `totalCount` / `availableCount`（詳細は `holdings`）
+- 書誌作成: `initialCopyCount` 件の AVAILABLE 所蔵を同時作成
+- 所蔵: `POST /api/books/{id}/copies` / `DELETE /api/books/{id}/copies/{copyId}`
+- 利用者 CRUD の対象は `general_user` のみ（社員は Keycloak）
+
+## パターン
+
+- Controller → Service → Repository。Controller に業務分岐を書かない
+- 一覧・詳細レスポンスは domain 直出しを避け、DTO（`BookResponse` 等）に寄せる
+- 入力検証: Request DTO + `@Valid` → 400 `{ error, message }`
+- 業務衝突（在庫・LOANED 削除不可等）: Service 例外 → 409 `{ error, message }`
+- 認可: `@PreAuthorize` + JWT RBAC。セキュリティの正は API 側
+- DB 変更は Flyway のみ。既存 V* を書き換えず、次番号のマイグレーションを追加
+- 論理削除: `books.deleted` / `users.is_active`。履歴を壊す物理削除をしない
+
+## Member A と「実装」依頼
+
+- 実装は本人が手で行う。Agent は差分整理・設計確認・デバッグ支援を優先し、大規模な一括生成は避ける
+- 依頼時は機能 ID（F-02 / F-04 等）または `docs/refactor-holdings-and-checkout.md` / `docs/openapi-notes.md` を参照する
+
+### 「実装」と送られた場合の進め方
+
+- ① **現状のコードを確認**: 関連する `docs/` と実装（controller / service / repository / domain / dto / Flyway）を読み、現在地（未実装・暫定・TODO・旧 `stock_count` 残存等）を特定する
+- ② **次タスクを提示**: 設計（`docs/` / `README.md`）と差分が最小になる順で、次にやるべき作業を具体化する（推奨: Flyway → Entity → Book API → Loan API）
+- ③ **写経コード + 解説**: 写経できるコード例を示し、あわせて次を中心に説明する（Java の基本構文の説明は不要）
+  - **機能**: 各クラス・メソッドが何をするか（入力→処理→出力 / HTTP ステータス）
+  - **依存**: Spring / JPA / Flyway / Security のどれを使い、なぜその層に置くか
+  - **データの流れ**: Request → Service → DB（Entity）→ Response。TX 境界・ステータス更新の順序
+  - **初出の要素の解説**: 初めて登場する注釈・API（例: `@Transactional`, `@Lock`, `@PreAuthorize`, Flyway `LATERAL`）がある場合、直後に「何をするか / なぜ使うか / このコード内でどこに効くか」を詳細に追記する
+
+## 参照
+
+- `docs/refactor-holdings-and-checkout.md` — 書誌/所蔵・一括貸出（確定）
+- `docs/openapi-notes.md` — API 契約
+- `docs/er-diagram.md` — DB
+- `docs/sequence-diagram.md` — フロー
+- `README.md` — スコープ・機能 ID

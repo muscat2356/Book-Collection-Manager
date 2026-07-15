@@ -71,21 +71,30 @@ WebSocket、一般ユーザー向けマイページ、`GET /api/loans/me`、延�
 - [docs/er-diagram.md](docs/er-diagram.md) — DB
 - [docs/frontend-gap-analysis.md](docs/frontend-gap-analysis.md) — フロント差分リスト
 
-## AI Agent への依頼方針（Member B）
+## AI Agent への依頼方針
+
+### Member A（バック）
+
+- **実装は本人が手で行う**。Agent は下書きの一括生成より、差分整理・設計確認・エラー原因の説明を優先する
+- 依頼時は機能 ID（F-02 / F-04 等）か `docs/refactor-holdings-and-checkout.md` / `docs/openapi-notes.md` を添える
+- レイヤ構成（controller / service / repository / domain / dto / Flyway）に合わせる
+- 旧単件貸出（`bookId` + `stock_count`）は実装せず、所蔵分離後の契約で進める
+
+### Member B（フロント）
 
 - **実装は本人が手で行う**。Agent は下書きコードの一括生成より、差分整理・設計確認・エラー原因の説明を優先する
 - 依頼時は機能 ID（F-01 等）か docs への参照を添える
 - 既存のコンポーネント構成（pages / components / api / types）に合わせる
 - セキュリティの正は API 側。フロントの権限制御は UI 出し分け + 403 ハンドリング
 
-### 「実装」と送られた場合の進め方
+### 「実装」と送られた場合の進め方（共通）
 
-- ① **現状のコードを確認**: 関連する `docs/` と実装（pages/components/api/types/auth 等）を読み、現在地（未実装・暫定・TODO）を特定する
-- ② **次タスクを提示**: 設計（`docs/` / `README.md`）と差分が最小になる順で、次にやるべき作業を具体化して提示する
-- ③ **写経コード + 解説**: 提示する際は「写経できるコード例」を示し、あわせて次を中心に説明する（宣言の書き方や TypeScript 構文の説明は不要）
-  - **機能**: 各関数・hook・コンポーネントが何をするか（入力→処理→出力）
-  - **依存**: どのライブラリ・API・既存モジュールを import して使っているか、なぜそれを選ぶか
-  - **データの流れ**: 状態（Context / state / props）や API レスポンスがどこから来て、どのイベントでどこへ渡るか
+- ① **現状のコードを確認**: 関連する `docs/` と担当領域の実装を読み、現在地（未実装・暫定・TODO）を特定する
+- ② **次タスクを提示**: 設計と差分が最小になる順で、次にやるべき作業を具体化する
+- ③ **写経コード + 解説**: 写経できるコード例 + 機能 / 依存 / データの流れ / 初出要素の解説（基本構文の説明は不要）
+
+フロント詳細は [frontend/AGENTS.md](frontend/AGENTS.md) と `.cursor/rules/libra-share-frontend.mdc`。  
+バック詳細は [backend/AGENTS.md](backend/AGENTS.md) と `.cursor/rules/libra-share-backend.mdc`。
 
 ## フロントエンド規約
 
@@ -93,8 +102,15 @@ WebSocket、一般ユーザー向けマイページ、`GET /api/loans/me`、延�
 - データ取得: `useEffect` + loading / error / data の 3 状態
 - API: axios + Bearer JWT（`api/client.ts`）
 - ルーティング: React Router v7、`Layout` + `Outlet`
-- 貸出中一覧は `/loans/active`（`/loans/me` は廃止）
+- 貸出中一覧は `/loans/active`（`/loans/me` は廃止）。貸出入口は `/loans/checkout`
 - **CSS**: 開発中は `VITE_USE_FULL_THEME=false`（`.env.development`）。フルテーマは `frontend/src/styles/theme/`
+
+## バックエンド規約
+
+- Java 21 + Spring Boot（controller / service / repository / domain / dto）
+- DB 変更は Flyway 追加のみ（既存 V* を書き換えない）
+- エラー: `{ error, message }`。入力 400 / 業務衝突 409。認可は `@PreAuthorize` + JWT
+- 書誌/所蔵分離・一括貸出は [docs/refactor-holdings-and-checkout.md](docs/refactor-holdings-and-checkout.md) が正
 
 ## 参照リポジトリ
 
