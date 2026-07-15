@@ -20,6 +20,8 @@ import com.example.librashare.dto.request.BookRequest;
 import com.example.librashare.dto.response.BookResponse;
 import com.example.librashare.service.BookService;
 
+import jakarta.validation.Valid;
+
 /**
  * 書籍のCRUD機能を実装したRESTController
  * @author furuyama
@@ -70,7 +72,7 @@ public class BookController {
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('admin_employee')")
-    public ResponseEntity<BookResponse> createBook(@RequestBody BookRequest bookRequest){
+    public ResponseEntity<BookResponse> createBook(@Valid @RequestBody BookRequest bookRequest){
         BookResponse response = bookService.createBook(bookRequest);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -84,7 +86,7 @@ public class BookController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('admin_employee')")
-    public ResponseEntity<BookResponse> updateBook(@PathVariable Long id, @RequestBody BookRequest bookRequest){
+    public ResponseEntity<BookResponse> updateBook(@PathVariable Long id,@Valid @RequestBody BookRequest bookRequest){
         
         Optional <BookResponse> response = bookService.updateBook(id, bookRequest);
 

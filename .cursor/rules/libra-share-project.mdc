@@ -20,12 +20,28 @@ alwaysApply: true
 - 書誌 `books` と所蔵 `book_copies` を分離。貸出は `{ userId, bookCopyIds }`。詳細は `docs/refactor-holdings-and-checkout.md`。
 - 利用者管理の対象は `general_user` のみ。社員は Keycloak コンソール管理。
 
+## Member A（バック）依頼時
+
+- 実装は本人が手で行う。Agent は差分整理・設計確認・デバッグ支援を優先し、大規模な下書き生成は避ける。
+- 機能 ID（F-02 / F-04 等）または `docs/refactor-holdings-and-checkout.md` / `docs/openapi-notes.md` / `docs/er-diagram.md` を参照して依頼する。
+- 旧単件貸出（`bookId` + `stock_count` 加減算）は実装しない。所蔵分離後の契約で進める。
+
+### 「実装」と送られた場合の進め方（バック）
+
+- ① **現状のコードを確認**: 関連する `docs/` と実装（controller / service / repository / domain / dto / Flyway）を読み、現在地（未実装・暫定・TODO・旧モデル残存）を特定する
+- ② **次タスクを提示**: 設計と差分が最小になる順で具体化する（推奨: Flyway → Entity → Book API → Loan API）。ブランチは `develop` から `back/feature/...`
+- ③ **写経コード + 解説**: 写経できるコード例を示し、あわせて次を中心に説明する（Java の基本構文の説明は不要）
+  - **機能**: 各クラス・メソッドが何をするか（入力→処理→出力 / HTTP ステータス）
+  - **依存**: Spring / JPA / Flyway / Security や既存モジュールをなぜその層で使うか
+  - **データの流れ**: Request → Service → DB → Response。TX 境界・ステータス更新の順序
+  - **初出の要素の解説**: 初めて登場する注釈・API（例: `@Transactional`, `@Lock`, `@PreAuthorize`）は直後に「何をするか / なぜ使うか / どこに効くか」を詳細に追記する
+
 ## Member B（フロント）依頼時
 
 - 実装は本人が手で行う。Agent は差分整理・設計確認・デバッグ支援を優先し、大規模な下書き生成は避ける。
 - 機能 ID（F-01 等）または `docs/frontend-gap-analysis.md` を参照して依頼する。
 
-### 「実装」と送られた場合の進め方
+### 「実装」と送られた場合の進め方（フロント）
 
 - ① **現状のコードを確認**: 関連する `docs/` と実装（pages/components/api/types/auth 等）を読み、現在地（未実装・暫定・TODO）を特定する
 - ② **次タスクを提示**: 設計（`docs/` / `README.md`）と差分が最小になる順で、次にやるべき作業を具体化して提示する

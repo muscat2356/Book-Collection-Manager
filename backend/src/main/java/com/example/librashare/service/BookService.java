@@ -140,7 +140,8 @@ public class BookService {
     /**
      * 該当書籍の削除処理
      * @param id
-     * @return
+     * @return 
+     * @throws BusinessException
      */
     public boolean deleteBook(Long id) {
 
@@ -152,6 +153,10 @@ public class BookService {
         }
         Book book = find.get();
         //bookの論理削除フラグを更新
+
+        //貸出をされている場合に削除できないように例外処理
+        //bussinessExceptionの例外を発生させる
+
         book.setDeleted(true);
 
         bookRepository.save(book);
