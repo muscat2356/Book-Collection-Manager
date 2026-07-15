@@ -1,22 +1,22 @@
 import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { createUser } from "../api/users"
+import { useApiClient } from "../api/ApiClientContext"
 
 export function UserCreatePage(){
-    type UserFormDate = {
+    type UserFormData = {
         displayName: string
         email: string
-        temporaryPassword: string
     }
 
     const navigate = useNavigate()
 
-    const [formData, setFormdata] = useState<UserFormDate>({
+    const [formData, setFormdata] = useState<UserFormData>({
         displayName: '',
         email: '',
-        temporaryPassword: ''
     })
 
+    const apiClient = useApiClient()
     const[error, setError] = useState<string | null>(null)
     const[submitting, setSubmitting] = useState(false)
 
@@ -25,7 +25,7 @@ export function UserCreatePage(){
         setError(null)
         setSubmitting(true)
 
-        createUser(formData)
+        createUser(apiClient, formData)
         .then(() => navigate('/users'))
         .catch((err) => setError(err.message))
         .finally(() => setSubmitting(false))
@@ -59,19 +59,6 @@ export function UserCreatePage(){
                 value={formData.email}
                 onChange={(e) =>
                     setFormdata({ ...formData, email: e.target.value })
-                }
-                required
-                />
-            </div>
-
-            <div>
-                <label htmlFor="temporaryPassword">パスワード：</label>
-                <input 
-                id="temporaryPassword"
-                type="password"
-                value={formData.temporaryPassword}
-                onChange={(e) =>
-                    setFormdata({ ...formData, temporaryPassword: e.target.value })
                 }
                 required
                 />

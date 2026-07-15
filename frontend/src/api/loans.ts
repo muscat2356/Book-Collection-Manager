@@ -7,13 +7,13 @@ import type { Loan } from "../types/Loan"
 export type ActiveLoan = {
     id: number
     book: { id: number, title: string, author: string }
-    user: { id: string, displayName: string }
+    user: { id: number, displayName: string }
     borrowedAt: string
     returnedAt: null
     status: 'BORROWED'
 }
 
-export async function createLoan(bookId: number, userId: string): Promise<Loan>{ 
+export async function createLoan(bookId: number, userId: number): Promise<Loan>{ 
     await new Promise((r) => setTimeout(r, 500))
 
     const book = mockBooks.find((b) => b.id === bookId)
