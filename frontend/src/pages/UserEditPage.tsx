@@ -70,6 +70,10 @@ export function UserEditPage(){
         return <p className="page-status">読み込み中・・・</p>
     }
 
+    if (error && !user) {
+        return <p className="page-status page-status--error">{error}</p>
+      }
+
     if(!user || !formData) {
         return <p className="page-status page-status--error">利用者が見つかりません</p>
     }
@@ -83,7 +87,7 @@ export function UserEditPage(){
                   <p className="page-status page-status--error">{error}</p>
                 )}
                 <div>
-                    <label htmlFor="daisplayName">氏名：</label>
+                    <label htmlFor="displayName">氏名：</label>
                     <input
                      id="displayName"
                      type="text"
