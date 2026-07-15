@@ -1,5 +1,6 @@
 package com.example.librashare.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -12,6 +13,7 @@ import com.example.librashare.domain.BookCopy;
 import com.example.librashare.domain.CopyStatus;
 import com.example.librashare.dto.request.BookRequest;
 import com.example.librashare.dto.response.BookResponse;
+import com.example.librashare.dto.response.HoldingResponse;
 import com.example.librashare.repository.BookCopyRepository;
 import com.example.librashare.repository.BookRepository;
 
@@ -41,8 +43,11 @@ public class BookService {
      * 書籍の全件検索
      * @return　DBから書籍を全件リターン
      */
-    public List<Book> findAll() {
-       return bookRepository.findAll();
+    public List<BookResponse> findAll() {
+       return bookRepository.findAll().stream()
+       .filter(book -> !book.isDeleted())
+       .map(book -> toResponse(book, false))
+       .toList();
     }
 
     /**
@@ -50,8 +55,11 @@ public class BookService {
      * @param id
      * @return　DBから該当書籍IDをリターン（レスポンスで使用するため）
      */
-    public Optional<Book> findById(Long id) {
-        return bookRepository.findById(id);
+    public Optional<BookResponse> findById(Long id) {
+        return bookRepository.findById(id)
+        .filter(b -> !b.isDeleted())
+        .map(b -> toResponse(b, true));
+
     }
 
     /**
@@ -59,7 +67,7 @@ public class BookService {
      * @param BookRequest bookRequest　該当書籍の情報
      * @return　Response 201　作成した書籍の情報を送信
      */
-    public Long createBook(BookRequest request) {
+    public BookResponse createBook(BookRequest request) {
         Book book = new Book();
         book.setTitle(request.getTitle());
         book.setAuthor(request.getAuthor());
@@ -75,7 +83,7 @@ public class BookService {
 
         copyRepository.saveAll(newCopies);
 
-        return saved.getId();
+        return toResponse(saved, false);
 
 
     }
@@ -87,28 +95,14 @@ public class BookService {
      * @return　Optionalの中にresponseを入れてリターン
      */
     public Optional<BookResponse> updateBook(Long id, BookRequest request) {
-        
-        //該当書籍が存在するのか確認
-        //null対策
-        Optional<Book> find = bookRepository.findById(id);
-        if (find.isEmpty()) {
-            //存在しない場合に空を返す
-            return Optional.empty();
-        }
-
-        Book book = find.get();
-
-        //更新内容へ入れ替え
-        book.setTitle(request.getTitle());
-        book.setAuthor(request.getAuthor());
-        book.setIsbn(request.getIsbn());
-
-       Book saved = bookRepository.save(book);
-       
-       BookResponse response = toResponse(saved);
-
-       //Optionalで包んでリターン
-       return Optional.of(response);
+        return bookRepository.findById(id)
+            .filter(b -> !b.isDeleted())
+            .map(book -> {
+                book.setTitle(request.getTitle());
+                book.setAuthor(request.getAuthor());
+                book.setIsbn(request.getIsbn());
+                return toResponse(book, false);
+            });
     }
 
     /**
@@ -116,9 +110,31 @@ public class BookService {
      * @param book
      * @return　BookResponseを返還
      */
-    private BookResponse toResponse(Book book) {
-    return new BookResponse(book.getId(), book.getTitle(), book.getAuthor(),
-            book.getIsbn());
+    private BookResponse toResponse(Book book, boolean incluedeHoldings) {
+        List<BookCopy> copies = copyRepository.findByBookId(book.getId());
+
+        // 確認しないとここで例外？
+        int total = copies.size();
+
+        int availableCount = (int) copies.stream()
+            .filter(c -> c.getStatus() == CopyStatus.AVAILABLE)
+            .count();
+
+            List<HoldingResponse> holdings = new ArrayList<>();
+            if (incluedeHoldings) {
+                holdings = copies.stream()
+                    .map(c -> new HoldingResponse(c.getId(), c.getStatus()))
+                    .toList();
+            }
+
+            return new BookResponse(
+                book.getId(), 
+                book.getTitle(), 
+                book.getAuthor(),
+                book.getIsbn(),
+                total,
+                availableCount,
+                holdings);
     }
 
     /**

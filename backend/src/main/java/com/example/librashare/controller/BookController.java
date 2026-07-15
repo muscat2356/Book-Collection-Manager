@@ -45,8 +45,8 @@ public class BookController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('general_employee','admin_employee')")
-    public ResponseEntity<List<Book>> findAll(){
-        List<Book> books = bookService.findAll();
+    public ResponseEntity<List<BookResponse>> findAll(){
+        List<BookResponse> books = bookService.findAll();
         return ResponseEntity.ok(books);
     }
 
@@ -57,10 +57,10 @@ public class BookController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('general_employee','admin_employee')")
-    public ResponseEntity<Book> findById(@PathVariable Long id){
+    public ResponseEntity<BookResponse> findById(@PathVariable Long id){
         return bookService.findById(id)
-                .map(book -> ResponseEntity.ok(book))
-                .orElse(ResponseEntity.notFound().build());
+            .map(b -> ResponseEntity.ok(b))
+            .orElse(ResponseEntity.notFound().build());
     }
 
     /**
@@ -71,13 +71,7 @@ public class BookController {
     @PostMapping
     @PreAuthorize("hasAnyRole('admin_employee')")
     public ResponseEntity<BookResponse> createBook(@RequestBody BookRequest bookRequest){
-        Long bookId = bookService.createBook(bookRequest);
-
-        BookResponse response = new BookResponse(
-                bookId,
-                bookRequest.getTitle(),
-                bookRequest.getAuthor(),
-                bookRequest.getIsbn());
+        BookResponse response = bookService.createBook(bookRequest);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

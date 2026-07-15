@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.example.librashare.domain.BookCopy;
+import com.example.librashare.domain.CopyStatus;
+
 import java.util.List;
 
 
@@ -18,4 +20,8 @@ import java.util.List;
 @Repository
 public interface BookCopyRepository extends JpaRepository<BookCopy, Long> {
     List<BookCopy> findByBookId(Long bookId);
+
+    long countByBookId(Long bookId);
+
+    long countByBookIdAndAtatus(Long bookId, CopyStatus status);
 }
