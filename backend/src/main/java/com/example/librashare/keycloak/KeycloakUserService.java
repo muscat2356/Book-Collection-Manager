@@ -1,11 +1,17 @@
 package com.example.librashare.keycloak;
 
+import java.util.List;
+
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.stereotype.Service;
 
+import com.example.librashare.exception.exception.KeycloakOperationException;
+
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 @Service
@@ -29,22 +35,43 @@ public class KeycloakUserService {
         //keycloak接続立ち上げ
         Keycloak keycloak = buildKeycloak();
         
-        //ユーザー情報を表すオブジェクトの生成
-        UserRepresentation user = new UserRepresentation();
-        user.setUsername(email);
-        user.setEmail(email);
-        user.setEnabled(true);
-        //ユーザーアクティブのON設定
 
-        //keycloakへユーザー登録のAPIリクエスト
-        Response response = keycloak.realm(props.getRealm()).users().create(user);
+        try{
+            //ユーザー情報を表すオブジェクトの生成
+            UserRepresentation user = new UserRepresentation();
+            user.setUsername(email);
+            user.setEmail(email);
+            user.setEnabled(true);
+            //ユーザーアクティブのON設定
 
-        //ReposenからLocationヘッダーを取得する -> keycloakID
-        String sub = CreatedResponseUtil.getCreatedId(response);
+            //keycloakへユーザー登録のAPIリクエスト
+            Response response = keycloak.realm(props.getRealm()).users().create(user);
 
-        keycloak.close();
+            //ReposenからLocationヘッダーを取得する -> keycloakID
+            String sub = CreatedResponseUtil.getCreatedId(response);
 
-        return sub;
+            //ロール登録処理
+            RoleRepresentation role = keycloak.realm(props.getRealm())
+                    .roles()
+                    .get("general_user")
+                    .toRepresentation();
+
+            //ロール付与の実施
+            keycloak.realm(props.getRealm())
+                    .users()
+                    .get(sub)
+                    .roles()
+                    .realmLevel()
+                    .add(List.of(role));
+            
+            //keycloakIDの付与
+            return sub;
+
+        }catch(WebApplicationException e){
+            throw new KeycloakOperationException("Keycloakユーザーの作成またはロール付与に失敗しました。", e);
+        }finally{
+            keycloak.close();
+        }
     }
 
     /**
