@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Book } from "../types/Book";
-import { fetchBookById, updateBook } from "../api/books";
+import { deleteBook, fetchBookById, updateBook } from "../api/books";
 import { useApiClient } from "../api/ApiClientContext";
 
 export function BookEditPage(){
@@ -20,18 +20,30 @@ export function BookEditPage(){
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [submitting, setSubmitting] = useState(false)
+    const [deleting, setDeleting] = useState(false)
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
         e.preventDefault()
+        if(!id || !formData) return
         setError(null)
         setSubmitting(true)
 
-        if(!id || !formData) return
         updateBook(apiClient, id, formData)
         .then(() => navigate(`/books/${id}`))
         .catch((error) => setError(error.message))
         .finally(() => setSubmitting(false))
     }
+
+    function handleDelete() {
+        if (!id) return
+        if (!window.confirm("この書籍を削除しますか？")) return
+        setError(null)
+        setDeleting(true)
+        deleteBook(apiClient, id)
+          .then(() => navigate("/books"))
+          .catch((err) => setError(err.message))
+          .finally(() => setDeleting(false))
+      }
 
     useEffect(() => {
         if(!id){
@@ -40,9 +52,20 @@ export function BookEditPage(){
             return
         }
 
+        let ignore = false
+
+        setError(null)
+        setLoading(true)
+
         fetchBookById(apiClient, id)
             .then((data) => {
-                if (!data) return
+                if(ignore) return
+                if (!data) {
+                    setBook(null)
+                    setFormData(null)
+                    setError("書籍が見つかりません")
+                    return
+                }
                 setBook(data);
                 setFormData({
                     title: data.title,
@@ -51,12 +74,26 @@ export function BookEditPage(){
                     stockCount: data.stockCount    
                 });
             })
-            .catch((err) => setError(err.message))
-            .finally(() => setLoading(false))
+            .catch((err) => { 
+                if(ignore) return
+                setFormData(null)
+                setBook(null)
+                setError(err.message)
+            })
+            .finally(() => {if(!ignore) setLoading(false)})
+
+        return () => {
+            ignore = true
+        }
+        
     }, [id, apiClient])
 
     if(loading) {
         return <p className="page-status">読み込み中・・・</p>
+    }
+
+    if(error && !book) {
+        return <p className="page-status page-status--error">{error}</p>
     }
 
     if(!book || !formData) {
@@ -72,7 +109,7 @@ export function BookEditPage(){
                   <p className="page-status page-status--error">{error}</p>
                 )}
                 <div>
-                    <label htmlFor="titie">タイトル：</label>
+                    <label htmlFor="title">タイトル：</label>
                     <input
                      id="title"
                      type="text"
@@ -135,8 +172,21 @@ export function BookEditPage(){
                       />
                 </div>
 
-                <button type="submit" className="btn btn--primary" disabled={submitting}>
-                {submitting ? '更新中...' : '更新'}
+                <button
+                type="submit"
+                className="btn btn--primary"
+                disabled={submitting || deleting}
+                >
+                {submitting ? "更新中..." : "更新"}
+                </button>
+
+                <button
+                 type="button"
+                 className="btn btn--secondary"
+                 onClick={handleDelete}
+                 disabled={submitting || deleting}
+                >
+                    {deleting ? "削除中..." : "削除"}
                 </button>
 
             </form>
