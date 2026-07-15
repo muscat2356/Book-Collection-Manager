@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.example.librashare.exception.dto.ErrorResponse;
 import com.example.librashare.exception.exception.BusinessException;
+import com.example.librashare.exception.exception.KeycloakOperationException;
 
 /**
  * API例外処理の一元管理クラス
@@ -44,6 +45,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> BusinesHandler(BusinessException e){
 
         ErrorResponse error = new ErrorResponse(e.getError(), e.getMessage());
+
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(KeycloakOperationException.class)
+    public ResponseEntity<ErrorResponse> KeycloakHandler(KeycloakOperationException e){
+
+        ErrorResponse error = new ErrorResponse(e.getMessage(), e);
 
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
