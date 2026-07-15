@@ -52,9 +52,20 @@ export function BookEditPage(){
             return
         }
 
+        let ignore = false
+
+        setError(null)
+        setLoading(true)
+
         fetchBookById(apiClient, id)
             .then((data) => {
-                if (!data) return
+                if(ignore) return
+                if (!data) {
+                    setBook(null)
+                    setFormData(null)
+                    setError("書籍が見つかりません")
+                    return
+                }
                 setBook(data);
                 setFormData({
                     title: data.title,
@@ -63,12 +74,26 @@ export function BookEditPage(){
                     stockCount: data.stockCount    
                 });
             })
-            .catch((err) => setError(err.message))
-            .finally(() => setLoading(false))
+            .catch((err) => { 
+                if(ignore) return
+                setFormData(null)
+                setBook(null)
+                setError(err.message)
+            })
+            .finally(() => {if(!ignore) setLoading(false)})
+
+        return () => {
+            ignore = true
+        }
+        
     }, [id, apiClient])
 
     if(loading) {
         return <p className="page-status">読み込み中・・・</p>
+    }
+
+    if(error && !book) {
+        return <p className="page-status page-status--error">{error}</p>
     }
 
     if(!book || !formData) {
@@ -84,7 +109,7 @@ export function BookEditPage(){
                   <p className="page-status page-status--error">{error}</p>
                 )}
                 <div>
-                    <label htmlFor="titie">タイトル：</label>
+                    <label htmlFor="title">タイトル：</label>
                     <input
                      id="title"
                      type="text"

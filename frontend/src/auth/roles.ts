@@ -3,7 +3,7 @@ import type Keycloak from "keycloak-js";
 export type AppRoles = 'general_employee' | 'admin_employee'
 
 export function getRoles(keycloak: Keycloak | null): string[] {
-    return keycloak?.tokenParsed?.realm_access?.roles
+    return keycloak?.tokenParsed?.realm_access?.roles ?? []
 }
 
 export function isEmployee(keycloak: Keycloak | null): boolean {
