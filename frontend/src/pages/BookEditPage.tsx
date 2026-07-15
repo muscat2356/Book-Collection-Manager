@@ -9,7 +9,6 @@ export function BookEditPage(){
         title: string
         author: string
         isbn: string
-        stockCount: number    
     }
 
     const navigate = useNavigate()
@@ -71,7 +70,6 @@ export function BookEditPage(){
                     title: data.title,
                     author: data.author,
                     isbn: data.isbn,
-                    stockCount: data.stockCount    
                 });
             })
             .catch((err) => { 
@@ -150,22 +148,6 @@ export function BookEditPage(){
                         setFormData({
                             ...formData,
                             isbn: e.target.value 
-                        })
-                     }
-                     required
-                      />
-                </div>
-
-                <div>
-                    <label htmlFor="stockCount">在庫：</label>
-                    <input
-                     id="stockCount"
-                     type="number"
-                     value={formData.stockCount}
-                     onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            stockCount: e.target.valueAsNumber 
                         })
                      }
                      required

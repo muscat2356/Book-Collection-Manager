@@ -8,7 +8,7 @@ export function BookCreatePage(){
         title: string
         author: string
         isbn: string
-        stockCount: number    
+        initialCopyCount: number    
     }
 
     const navigate = useNavigate()
@@ -17,7 +17,7 @@ export function BookCreatePage(){
         title: '',
         author: '',
         isbn: '',
-        stockCount: 0
+        initialCopyCount: 1
     })
 
     const apiClient = useApiClient()
@@ -79,14 +79,16 @@ export function BookCreatePage(){
                 </div>
 
                 <div>
-                    <label htmlFor="stockCount">在庫：</label>
+                    <label htmlFor="initialCopyCount">初期所蔵冊数：</label>
                     <input
-                     id="stockCount"
+                     id="initialCopyCount"
                      type="number"
-                     value={formData.stockCount}
-                     onChange={(e) =>
-                        setFormData({...formData, stockCount: e.target.valueAsNumber})
-                     }
+                     value={formData.initialCopyCount}
+                     onChange={(e) =>{
+                        const n = e.target.valueAsNumber
+                        setFormData({...formData, initialCopyCount: Number.isNaN(n) ? 1 : n,})
+                    }}
+                     min={1}
                      required />
                 </div>
 

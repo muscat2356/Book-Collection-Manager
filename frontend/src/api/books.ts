@@ -2,13 +2,11 @@ import { isAxiosError, type AxiosInstance } from "axios";
 import type { Book } from "../types/Book";
 
 export type CreateBookRequest = {
-    title: string
-    author: string
-    isbn: string
-    stockCount: number
-}
-
-export type UpdateBookRequest = CreateBookRequest
+    title: string; author: string; isbn: string; initialCopyCount: number
+  }
+  export type UpdateBookRequest = {
+    title: string; author: string; isbn: string
+  }
 
 function toErrorMessage(err: unknown): string {
     if(isAxiosError(err)) {

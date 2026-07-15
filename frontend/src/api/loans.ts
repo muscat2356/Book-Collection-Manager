@@ -22,9 +22,9 @@ export async function createLoan(bookId: number, userId: number): Promise<Loan>{
     const user = mockUsers.find((u) => u.id === userId)
     if(!user) throw new Error('利用者が見つかりません')
 
-    if(book.stockCount <= 0) throw new Error('在庫がありません')
+    if(book.totalCount <= 0) throw new Error('在庫がありません')
 
-        book.stockCount -= 1
+        book.totalCount -= 1
 
     const newLoan: Loan = {
         id: Number(mockLoans.length + 1),
@@ -48,7 +48,7 @@ export async function returnLoans(loanId:number) {
     
     loan.status = 'RETURNED';
     loan.returnedAt = Date().toString();
-    book.stockCount += 1;
+    book.totalCount += 1;
 }
 
 export async function fetchActiveLoans():Promise<ActiveLoan[]> {
