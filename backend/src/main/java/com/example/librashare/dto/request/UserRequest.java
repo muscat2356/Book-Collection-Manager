@@ -4,11 +4,18 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/**
+ * UserのAPIリクエスト用のDTO
+ * @author furuyama
+ * @since 2026-07-15
+ * @see UserController
+ */
 public class UserRequest {
 
     @NotBlank
     @Size(max = 100)
     private String displayName;
+    
     @Email
     @NotBlank
     @Size(max = 255)

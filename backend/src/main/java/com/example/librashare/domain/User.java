@@ -14,6 +14,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+/**
+ * Userのdomainクラス　Usersテーブルとの連携を兼ねてアノテーション付与
+ * @author furuyama
+ * @since 2026-07-15
+ * @see UserController
+ */
 @Entity
 @Table(name="users", uniqueConstraints = {
     @UniqueConstraint(name = "uq_users_email", columnNames = "email"),

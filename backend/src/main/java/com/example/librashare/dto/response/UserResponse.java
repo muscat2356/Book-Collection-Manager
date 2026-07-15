@@ -2,9 +2,16 @@ package com.example.librashare.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * UserのAPIレスポンス用DTO
+ * @author furuyama
+ * @since 2026-07-15
+ * @see UserControlelr
+ */
 public class UserResponse {
 
     private Long id;
+    //keycloakのID
     private String keycloakSub;
     private String displayName;
     private String email;
@@ -53,6 +60,7 @@ public class UserResponse {
         this.email = email;
     }
 
+    //Jacksonで認識されるようにアノテーション付与
     @JsonProperty("isActive")
     public boolean isActive() {
         return isActive;
