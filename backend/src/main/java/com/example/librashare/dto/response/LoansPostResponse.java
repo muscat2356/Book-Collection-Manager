@@ -2,6 +2,13 @@ package com.example.librashare.dto.response;
 
 import java.time.OffsetDateTime;
 
+/**
+ * loans/POSTのレスポンス用DTOクラス
+ * @author furuyama
+ * @since 2026-07-16
+ * @see LoansController
+ * @see LoansPostErrorResponse
+ */
 public class LoansPostResponse {
     
     private Long id;

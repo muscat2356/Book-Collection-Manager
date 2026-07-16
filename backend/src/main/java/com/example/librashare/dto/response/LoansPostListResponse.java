@@ -7,6 +7,7 @@ import java.util.List;
  *@author furuyama
  *@since 2026-07-16
  *@see LoansController
+ *@see LoansPostResponse 
  */
 public class LoansPostListResponse {
 
