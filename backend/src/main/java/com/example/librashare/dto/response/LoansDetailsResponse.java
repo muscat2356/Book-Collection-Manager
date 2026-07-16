@@ -2,6 +2,7 @@ package com.example.librashare.dto.response;
 
 import java.time.OffsetDateTime;
 
+import com.example.librashare.domain.LoanStatus;
 
 /**
  * GET/貸出情報と紐づけてUser/BookデータをレスポンスするDTOクラス
@@ -21,13 +22,15 @@ public class LoansDetailsResponse {
     private UserSummary user;
     private OffsetDateTime borrowedAt;
     private OffsetDateTime returnedAt;
-    private String status;
+    private LoanStatus status;
 
     public LoansDetailsResponse() {
     }
 
+    
+
     public LoansDetailsResponse(Long id, Long bookCopyId, BookSummary book, UserSummary user, OffsetDateTime borrowedAt,
-            OffsetDateTime returnedAt, String status) {
+            OffsetDateTime returnedAt, LoanStatus status) {
         this.id = id;
         this.bookCopyId = bookCopyId;
         this.book = book;
@@ -36,6 +39,8 @@ public class LoansDetailsResponse {
         this.returnedAt = returnedAt;
         this.status = status;
     }
+
+
 
     public Long getId() {
         return id;
@@ -61,10 +66,8 @@ public class LoansDetailsResponse {
         return returnedAt;
     }
 
-    public String getStatus() {
+    public LoanStatus getStatus() {
         return status;
     }
-
-    
     
 }

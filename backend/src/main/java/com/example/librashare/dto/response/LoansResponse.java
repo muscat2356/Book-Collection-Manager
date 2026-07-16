@@ -2,6 +2,9 @@ package com.example.librashare.dto.response;
 
 import java.time.OffsetDateTime;
 
+import com.example.librashare.domain.LoanStatus;
+import com.example.librashare.exception.dto.LoansPostErrorResponse;
+
 /**
  * loans/POST/PUTのレスポンス用DTOクラス
  * @author furuyama
@@ -18,7 +21,7 @@ public class LoansResponse {
     private Long userId;
     private OffsetDateTime borrowedAt;
     private OffsetDateTime returnedAt;
-    private String status;
+    private LoanStatus status;
     
     public LoansResponse() {
     }
