@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
 
     /**
      * バリエーションエラーのエラーハンドリングメソッド
-     * @return　エラーメッセージと400ステータスコードのリターン
+     * @return　エラーメッセージ 400
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> validationHandler(){
