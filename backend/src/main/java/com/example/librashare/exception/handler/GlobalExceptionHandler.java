@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.example.librashare.exception.dto.ErrorResponse;
 import com.example.librashare.exception.exception.BusinessException;
+import com.example.librashare.exception.exception.KeycloakOperationException;
+
+import jakarta.persistence.EntityNotFoundException;
 
 /**
  * API例外処理の一元管理クラス
@@ -26,7 +29,7 @@ public class GlobalExceptionHandler {
 
     /**
      * バリエーションエラーのエラーハンドリングメソッド
-     * @return　エラーメッセージと400ステータスコードのリターン
+     * @return　エラーメッセージ 400
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> validationHandler(MethodArgumentNotValidException ex){
@@ -48,7 +51,7 @@ public class GlobalExceptionHandler {
     /**
      * 業務処理のエラーハンドリングメソッド
      * @param e BusinessException(カスタム例外)
-     * @return レスポンス　エラーメッセージ、409ステータスコードのリターン
+     * @return エラーメッセージ、409
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> BusinesHandler(BusinessException e){
@@ -65,9 +68,32 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 外部システム連携失敗のエラーハンドリングメソッド
+     * @param e
+     * @return　エラーメッセージ　500
+     */
+    @ExceptionHandler(KeycloakOperationException.class)
+    public ResponseEntity<ErrorResponse> KeycloakHandler(KeycloakOperationException e){
+
+    ErrorResponse error = new ErrorResponse(e.getError(), e.getMessage());
+
+    return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * ユーザーが存在しない例外処理-> 404
+     * @param e
+     * @return
+     */
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<Void> NotFoundHandler(EntityNotFoundException e){
+        return ResponseEntity.notFound().build();
+    }
+
+    /**
      * サーバエラーなどの予期せぬエラーハンドリングメソッド
-     * @param e　スタックトレースで使用
-     * @return　レスポンス　エラーメッセージ、500ステータスコード
+     * @param e
+     * @return エラーメッセージ、500
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> ExceptionHandler(Exception e){
