@@ -77,7 +77,7 @@ public class UserService {
 
         Optional<User> optinalUser = userRepository.findById(id);
 
-        //ユーザーが存在するのか確認
+        //ユーザーが存在するのか確認 404　GlobalExceptionHandlerで捕捉
         if(optinalUser.isEmpty()){
             logger.error("ユーザーが存在しません id={}",id);
             throw new EntityNotFoundException("User not found: id=" + id);
@@ -85,7 +85,7 @@ public class UserService {
         
         User user = optinalUser.get();
 
-        //メール重複確認
+        //メール重複確認 ->カスタム例外処理　409
         if (!user.getEmail().equals(email)&& userRepository.existsByEmail(email)){
             logger.error("メールアドレスが重複しています email={}",email);
             throw new BusinessException("EMAIL_ALREADY_EXISTS", "このメールアドレスは既に使用されています");

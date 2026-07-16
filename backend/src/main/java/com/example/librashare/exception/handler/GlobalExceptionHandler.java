@@ -12,6 +12,8 @@ import com.example.librashare.exception.dto.ErrorResponse;
 import com.example.librashare.exception.exception.BusinessException;
 import com.example.librashare.exception.exception.KeycloakOperationException;
 
+import jakarta.persistence.EntityNotFoundException;
+
 /**
  * API例外処理の一元管理クラス
  * 401と403はSpringSecurityで例外処理するため実装しない
@@ -62,7 +64,15 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    //ユーザーが存在しない例外処理-> 404
+    /**
+     * ユーザーが存在しない例外処理-> 404
+     * @param e
+     * @return
+     */
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<Void> NotFoundHandler(EntityNotFoundException e){
+        return ResponseEntity.notFound().build();
+    }
 
     /**
      * サーバエラーなどの予期せぬエラーハンドリングメソッド
