@@ -40,14 +40,6 @@ export function CheckoutSelectionSummary() {
       )}
 
       <div className="checkout-summary__actions">
-        <button
-          type="button"
-          className="btn"
-          onClick={clearSelection}
-          disabled={count === 0}
-        >
-          選択を解除
-        </button>
         <Link
           to="/loans/checkout/confirm"
           className="btn btn--primary"
