@@ -22,8 +22,9 @@ import jakarta.ws.rs.core.Response;
 public class KeycloakUserService {
     
     //一時的なパスワード作成に使用
-    private static final String WORD = "ABCDEFGHIJKLMNOPQRSTUVWXYZabscdefghijklmnopqrstuvwxyz23456789";
+    private static final String WORD = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz23456789";
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final String ROLE = "general_user";
 
     //keycloak接続情報
     private final KeycloakProperties props;
@@ -43,29 +44,80 @@ public class KeycloakUserService {
 
         //keycloak接続立ち上げ
         Keycloak keycloak = buildKeycloak();
-        
 
-        try{
-            //ユーザー情報を表すオブジェクトの生成
-            //ユーザーアクティブのON設定
-            UserRepresentation user = new UserRepresentation();
+            try{
+                String sub = registerUser(keycloak, email);
+                try{
+                    assignRole(keycloak, sub);
+                }catch(RuntimeException e){
+                    deleteUser(keycloak, sub);
+                    throw e;
+                }
+                return sub;
+            }finally{
+                keycloak.close();
+            }
+    }
+
+    /**
+     * keycloakユーザー作成用のユーザー組み立てメソッド
+     * @param email
+     * @return
+     */
+    private UserRepresentation buildUserRepresentation(String email){
+
+        //ユーザーをビルド
+        UserRepresentation user = new UserRepresentation();
+
             user.setUsername(email);
             user.setEmail(email);
             user.setEnabled(true);
+            user.setCredentials(List.of(temporaryPasswordCreate()));
+            //一時的なパスワード取得
 
-            //一時パスワードの設定
-            CredentialRepresentation credential = new CredentialRepresentation();
-            credential.setType(CredentialRepresentation.PASSWORD);
-            credential.setTemporary(true);
-            credential.setValue(generateTemporaryPassword(10));
-            user.setCredentials(List.of(credential));
-            
-            //keycloakへユーザー登録のAPIリクエスト
-            Response response = keycloak.realm(props.getRealm()).users().create(user);
-            
-            String sub;
-            try{
+        return user;
+    }
 
+    /**
+     * keycloakユーザー作成時の一時的なパスワード生成メソッド
+     * @return
+     */
+    private CredentialRepresentation temporaryPasswordCreate() {
+
+       CredentialRepresentation credential = new CredentialRepresentation();
+        //パスワード設定
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setTemporary(true);
+        credential.setValue(generateTemporaryPassword(16));
+
+        return credential;
+    }
+
+    /**
+     * keycloakユーザー作成のユーザー登録メソッド
+     * @param keycloak
+     * @param email
+     * @return
+     */
+    private String registerUser(Keycloak keycloak, String email){
+
+        Response response;
+
+        try{
+            //ユーザー作成のPOSTメソッドを実行
+            response = keycloak.realm(props.getRealm())
+                                    .users()
+                                    .create(buildUserRepresentation(email));
+        }catch(WebApplicationException e){
+
+            logger.error("Keycloakユーザー作成に失敗: email={}", email, e);
+
+            throw new KeycloakOperationException(
+                    "KEYCLOAK_USER_CREATED_FAILED", 
+                    "keycloakユーザー作成に失敗しました。");
+        }
+
+        try{
                 //メール重複確認
                 if(response.getStatus() == 409 ){
                     logger.error("既に登録されているメールアドレスを使用しています。");
@@ -81,20 +133,25 @@ public class KeycloakUserService {
                             "USER_CREATED_FAILED", 
                             "keycloakのユーザー登録に失敗しました。");
                 }
+            return CreatedResponseUtil.getCreatedId(response);
+        }finally{
+            response.close();
+        }
+    }
 
-                //ReposenからLocationヘッダーを取得する -> keycloakID
-                sub = CreatedResponseUtil.getCreatedId(response);
+    /**
+     * keycloakユーザー作成のロール付与実行メソッド
+     * @param keycloak
+     * @param sub
+     */
+    private void assignRole(Keycloak keycloak, String sub){
+        try{
 
-            }finally{
-                response.close();
-            }
-            
-
-            //ロール登録処理
+            //ロールの設定
             RoleRepresentation role = keycloak.realm(props.getRealm())
-                    .roles()
-                    .get("general_user")
-                    .toRepresentation();
+                .roles()
+                .get(ROLE)
+                .toRepresentation();
 
             //ロール付与の実施
             keycloak.realm(props.getRealm())
@@ -103,20 +160,32 @@ public class KeycloakUserService {
                     .roles()
                     .realmLevel()
                     .add(List.of(role));
-            
-            //keycloakIDの付与
-            return sub;
 
         }catch(WebApplicationException e){
-            logger.error("Keycloakユーザー作成に失敗: email={}", email, e);
+
+            logger.error("Keycloakユーザーロール付与に失敗 sub={}", sub, e);
             throw new KeycloakOperationException(
-                    "KEYCLOAK_USER_CREATED_FAILED", 
-                    "keycloakユーザー作成またはロール付与処理に失敗しました。");
-        }finally{
-            keycloak.close();
+                    "KEYCLOAK_USER_ASSIGNROLE_FAILED", 
+                    "keycloakロール付与処理に失敗しました。");
         }
     }
 
+    /**
+     * keycloakユーザー作成時にロール付与失敗ユーザーの削除補助メソッド
+     * 作成失敗の場合に削除を実行し、再度登録を促す設定
+     */
+    private void deleteUser(Keycloak keycloak, String sub){
+
+        try{
+            
+            //keycloakへDELETEメソッドの実行依頼
+            keycloak.realm(props.getRealm()).users().get(sub).remove();
+            logger.info("ロール付与失敗のためユーザーを削除しました sub={}", sub);
+
+        }catch(RuntimeException e){
+            logger.error("ロール付与失敗のユーザー削除が実行できませんでした（手動で削除対応をお願いします） sub={}", sub, e);
+        }
+    }
 
     /**
      * keycloakメールアドレス更新処理メソッド
@@ -195,7 +264,7 @@ public class KeycloakUserService {
     }
 
 
-    public String generateTemporaryPassword(int length){
+    private String generateTemporaryPassword(int length){
 
         StringBuilder sb = new StringBuilder(length);
         
