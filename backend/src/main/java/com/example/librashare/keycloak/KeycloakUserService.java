@@ -81,25 +81,36 @@ public class KeycloakUserService {
     }
 
 
+    /**
+     * keycloakメールアドレス更新処理メソッド
+     * @param keycloakSub
+     * @param email
+     * @throws KeycloakOperationException →500エラー
+     */
     public void updateEmail(String keycloakSub, String email) {
         Keycloak keycloak = buildKeycloak();
 
         try{
+            //ユーザー情報の取得
             UserRepresentation user = keycloak.realm(props.getRealm())
                                     .users()
                                     .get(keycloakSub)
                                     .toRepresentation();
             
+            //変更箇所の情報をセット
             user.setEmail(email);
             user.setUsername(email);
 
+            //ユーザー更新処理の実行
             keycloak.realm(props.getRealm()).users().get(keycloakSub).update(user);
 
         }catch(WebApplicationException e){
             logger.error("keycloakのユーザー更新処理に失敗しました。 keycloakID={}", keycloakSub, e);
+           
             throw new KeycloakOperationException(
                 "KEYCLOAK_USER_UPDATED_FAILED",
                 "Keycloakのメール更新処理が失敗しました。");
+
         }finally{
             keycloak.close();
         }

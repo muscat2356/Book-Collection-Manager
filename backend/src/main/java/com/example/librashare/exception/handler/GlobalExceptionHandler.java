@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
     /**
      * 業務処理のエラーハンドリングメソッド
      * @param e BusinessException(カスタム例外)
-     * @return レスポンス　エラーメッセージ、409ステータスコードのリターン
+     * @return エラーメッセージ、409
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> BusinesHandler(BusinessException e){
@@ -49,18 +49,25 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
-    // @ExceptionHandler(KeycloakOperationException.class)
-    // public ResponseEntity<ErrorResponse> KeycloakHandler(KeycloakOperationException e){
+    /**
+     * 外部システム連携失敗のエラーハンドリングメソッド
+     * @param e
+     * @return　エラーメッセージ　500
+     */
+    @ExceptionHandler(KeycloakOperationException.class)
+    public ResponseEntity<ErrorResponse> KeycloakHandler(KeycloakOperationException e){
 
-    //     ErrorResponse error = new ErrorResponse(e.getMessage(), e);
+    ErrorResponse error = new ErrorResponse(e.getError(), e.getMessage());
 
-    //     return new ResponseEntity<>(error, HttpStatus.CONFLICT);
-    // 
+    return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    //ユーザーが存在しない例外処理-> 404
 
     /**
      * サーバエラーなどの予期せぬエラーハンドリングメソッド
-     * @param e　スタックトレースで使用
-     * @return　レスポンス　エラーメッセージ、500ステータスコード
+     * @param e
+     * @return エラーメッセージ、500
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> ExceptionHandler(Exception e){

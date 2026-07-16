@@ -77,25 +77,30 @@ public class UserService {
 
         Optional<User> optinalUser = userRepository.findById(id);
 
+        //ユーザーが存在するのか確認
         if(optinalUser.isEmpty()){
-            logger.error("ユーザーが存在しません id:"+id);
+            logger.error("ユーザーが存在しません id={}",id);
             throw new EntityNotFoundException("User not found: id=" + id);
         }
-
+        
         User user = optinalUser.get();
 
+        //メール重複確認
         if (!user.getEmail().equals(email)&& userRepository.existsByEmail(email)){
             logger.error("メールアドレスが重複しています email={}",email);
             throw new BusinessException("EMAIL_ALREADY_EXISTS", "このメールアドレスは既に使用されています");
         }
 
-
         user.setDisplayName(displayName);
         user.setEmail(email);
 
+        //DB更新処理開始
         userRepository.saveAndFlush(user);
 
+        //keycloak更新処理開始
         keycloakUserService.updateEmail(user.getKeycloakSub(), email);
+
+        logger.info("ユーザー更新完了 id={}", id);
         
         return user;
     }
