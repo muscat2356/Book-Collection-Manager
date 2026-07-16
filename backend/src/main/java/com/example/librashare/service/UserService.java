@@ -36,11 +36,11 @@ public class UserService {
     }
 
     /**
-     * ユーザーの全件検索
+     * ユーザーの全件検索(activeユーザーのみ表示)
      * @return　DBからユーザーを全件リターン
      */
     public List<User> findAll(){
-        return userRepository.findAll();
+        return userRepository.findByIsActiveTrue();
     }
 
     /**

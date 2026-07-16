@@ -39,7 +39,7 @@ public class UserController {
     }
 
     /**
-     * ユーザー全件取得API
+     * ユーザー全件取得API（activeユーザーのみ取得）
      * @return　ユーザー全件のjsonデータをレスポンス
      */
     @GetMapping

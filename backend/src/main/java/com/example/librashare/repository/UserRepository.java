@@ -1,5 +1,7 @@
 package com.example.librashare.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.librashare.domain.User;
@@ -14,4 +16,6 @@ import com.example.librashare.service.UserService;
 public interface UserRepository extends JpaRepository<User, Long> {
     
     boolean existsByEmail(String email);
+
+    List<User> findByIsActiveTrue();
 }
