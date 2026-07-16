@@ -26,8 +26,10 @@ public class LoansResponse {
     public LoansResponse() {
     }
 
+    
+
     public LoansResponse(Long id, Long bookCopyId, Long bookId, String bookTitle, Long userId,
-            OffsetDateTime borrowedAt, OffsetDateTime returnedAt, String status) {
+            OffsetDateTime borrowedAt, OffsetDateTime returnedAt, LoanStatus status) {
         this.id = id;
         this.bookCopyId = bookCopyId;
         this.bookId = bookId;
@@ -37,6 +39,8 @@ public class LoansResponse {
         this.returnedAt = returnedAt;
         this.status = status;
     }
+
+
 
     public Long getId() {
         return id;
@@ -66,11 +70,9 @@ public class LoansResponse {
         return returnedAt;
     }
 
-    public String getStatus() {
+    public LoanStatus getStatus() {
         return status;
     }
-
-    
 
 
 }

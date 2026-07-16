@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.librashare.domain.Book;
@@ -33,7 +32,6 @@ public class BookService {
     private final BookRepository bookRepository;
     private final BookCopyRepository copyRepository;
 
-    @Autowired
     public BookService(BookRepository bookRepository, BookCopyRepository copyRepository) {
         this.bookRepository = bookRepository;
         this.copyRepository = copyRepository;
