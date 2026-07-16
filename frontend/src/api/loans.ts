@@ -1,11 +1,19 @@
 
-import { mockBooks } from "../data/mockBooks"
-import { mockLoans } from "../data/mockLoans"
-import { mockUsers } from "../data/mockUsers"
+import { isAxiosError, type AxiosInstance } from "axios"
 import type { Loan } from "../types/Loan"
+
+export type CreateLoanRequest = {
+    userId: number
+    bookCopyIds: number[]
+}
+
+export type CreateLoanResponse = {
+    loans: Loan[]
+}
 
 export type ActiveLoan = {
     id: number
+    bookCopyId: number
     book: { id: number, title: string, author: string }
     user: { id: number, displayName: string }
     borrowedAt: string
@@ -13,72 +21,65 @@ export type ActiveLoan = {
     status: 'BORROWED'
 }
 
-export async function createLoan(bookId: number, userId: number): Promise<Loan>{ 
-    await new Promise((r) => setTimeout(r, 500))
+type LoanApiErrorBody = {
+  message?: string
+  error?: string
+  failedBookCopyIds?: number[]
+}
 
-    const book = mockBooks.find((b) => b.id === bookId)
-    if(!book) throw new Error('書籍が見つかりません')
+function toErrorMessage(err: unknown): string {
+  if (isAxiosError(err)) {
+    if (err.response?.status === 403) return "権限がありません"
+    const data = err.response?.data as LoanApiErrorBody | undefined
+    const message = data?.message ?? err.message
 
-    const user = mockUsers.find((u) => u.id === userId)
-    if(!user) throw new Error('利用者が見つかりません')
-
-    if(book.totalCount <= 0) throw new Error('在庫がありません')
-
-        book.totalCount -= 1
-
-    const newLoan: Loan = {
-        id: Number(mockLoans.length + 1),
-        bookId: bookId,
-        userId: userId,
-        borrowedAt: Date().toString(),
-        returnedAt: null,
-        status: 'BORROWED'
+    // 409: 貸出不可の所蔵がある（全件ロールバック）
+    if (err.response?.status === 409) {
+      const ids = data?.failedBookCopyIds
+      if (ids && ids.length > 0) {
+        return `${message}（所蔵 #${ids.join(", #")}）`
+      }
+      return message || "貸出できない所蔵が含まれています"
     }
 
-    mockLoans.push(newLoan)
-    return newLoan
+    return message
+  }
+  if (err instanceof Error) return err.message
+  return "不明なエラーが発生しました"
 }
 
-export async function returnLoans(loanId:number) {
-    const loan = mockLoans.find((l) => l.id === loanId)
-    if(!loan) throw new Error('貸し出し履歴がありません');
-    
-    const book = mockBooks.find((b) => b.id === loan.bookId)
-    if(!book) throw new Error('対象の本がありません');
-    
-    loan.status = 'RETURNED';
-    loan.returnedAt = Date().toString();
-    book.totalCount += 1;
+export async function createLoan(
+    apiClient: AxiosInstance,
+    request: CreateLoanRequest): Promise<CreateLoanResponse>{
+        
+    try {
+        const response = await apiClient.post<CreateLoanResponse>("/api/loans", request)
+        return response.data
+    } catch (err) {
+        throw new Error(toErrorMessage(err))
+    }
+
 }
 
-export async function fetchActiveLoans():Promise<ActiveLoan[]> {
-    await new Promise((r) => setTimeout(r, 500))
+export async function returnLoans(
+    apiClient:AxiosInstance,
+    loanId: number
+):Promise<Loan> {
+    try {
+        const response = await apiClient.put<Loan>(`/api/loans/${loanId}/return`)
+        return response.data
+    } catch (err) {
+        throw new Error(toErrorMessage(err))
+    }
+}
 
-    return mockLoans
-    .filter((loan) => loan.status === 'BORROWED')
-    .map((loan) => {
-        const book = mockBooks.find((b) => b.id === loan.bookId)
-        const user = mockUsers.find((u) => u.id === loan.userId)
-
-        if(!book || !user) {
-            throw new Error('貸出データが見つかりません')
-        }
-
-        return{
-            id: loan.id,
-            book: {
-                id: book.id,
-                title: book.title,
-                author: book.author,
-            },
-            user: {
-                id: user.id,
-                displayName: user.displayName,
-            },
-            borrowedAt: loan.borrowedAt,
-            returnedAt: null,
-            status: 'BORROWED' as const,
-        }
-    })
+export async function fetchActiveLoans(apiClient:AxiosInstance):Promise<ActiveLoan[]>
+ {
+    try {
+        const response = await apiClient.get<ActiveLoan[]>("/api/loans/active")
+        return response.data
+    } catch (err) {
+        throw new Error(toErrorMessage(err))
+    }
 
 }

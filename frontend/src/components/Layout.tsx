@@ -21,6 +21,7 @@ export function Layout() {
             {isAdmin(keycloak) && (
               <Link to="/books/new" className="nav-link">新規書籍登録</Link>
             )}
+            <Link to="/loans/checkout" className="nav-link">貸出</Link>
             <Link to="/loans/active" className="nav-link">貸出中の書籍</Link>
             <Link to="/users" className="nav-link">利用者管理</Link>
             <button type='button'

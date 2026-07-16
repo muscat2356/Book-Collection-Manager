@@ -3,6 +3,7 @@ import type { Loan } from "../types/Loan";
 export const mockLoans: Loan[] = [
     {
         id: 1,
+        bookCopyId: 12,
         bookId: 1,
         userId: 1,
         borrowedAt: '2026-01-04',
@@ -11,6 +12,7 @@ export const mockLoans: Loan[] = [
     },
     {
         id: 2,
+        bookCopyId: 15,
         bookId: 2,
         userId: 2,
         borrowedAt: '2026-02-04',
