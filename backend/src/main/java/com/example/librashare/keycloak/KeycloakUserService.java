@@ -1,10 +1,12 @@
 package com.example.librashare.keycloak;
 
+import java.security.SecureRandom;
 import java.util.List;
 
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
@@ -18,6 +20,10 @@ import jakarta.ws.rs.core.Response;
 
 @Service
 public class KeycloakUserService {
+    
+    //一時的なパスワード作成に使用
+    private static final String WORD = "ABCDEFGHIJKLMNOPQRSTUVWXYZabscdefghijklmnopqrstuvwxyz23456789";
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     //keycloak接続情報
     private final KeycloakProperties props;
@@ -41,17 +47,48 @@ public class KeycloakUserService {
 
         try{
             //ユーザー情報を表すオブジェクトの生成
+            //ユーザーアクティブのON設定
             UserRepresentation user = new UserRepresentation();
             user.setUsername(email);
             user.setEmail(email);
             user.setEnabled(true);
-            //ユーザーアクティブのON設定
 
+            //一時パスワードの設定
+            CredentialRepresentation credential = new CredentialRepresentation();
+            credential.setType(CredentialRepresentation.PASSWORD);
+            credential.setTemporary(true);
+            credential.setValue(generateTemporaryPassword(10));
+            user.setCredentials(List.of(credential));
+            
             //keycloakへユーザー登録のAPIリクエスト
             Response response = keycloak.realm(props.getRealm()).users().create(user);
+            
+            String sub;
+            try{
 
-            //ReposenからLocationヘッダーを取得する -> keycloakID
-            String sub = CreatedResponseUtil.getCreatedId(response);
+                //メール重複確認
+                if(response.getStatus() == 409 ){
+                    logger.error("既に登録されているメールアドレスを使用しています。");
+                    throw new KeycloakOperationException(
+                                "USER_ALREADY_EXISTS",
+                                "既に登録されているメールアドレスです");
+                }
+
+                //その他例外の確認
+                if(response.getStatus() != 201){
+                    logger.error("keycloakのユーザー登録に失敗しました。");
+                    throw new KeycloakOperationException(
+                            "USER_CREATED_FAILED", 
+                            "keycloakのユーザー登録に失敗しました。");
+                }
+
+                //ReposenからLocationヘッダーを取得する -> keycloakID
+                sub = CreatedResponseUtil.getCreatedId(response);
+
+            }finally{
+                response.close();
+            }
+            
 
             //ロール登録処理
             RoleRepresentation role = keycloak.realm(props.getRealm())
@@ -155,6 +192,18 @@ public class KeycloakUserService {
 
         //ymlに登録されている情報をもとに、接続処理を実行
         //clientIdとclientSecretの双方を活用したclient_credentialsでの接続処理を採用
+    }
+
+
+    public String generateTemporaryPassword(int length){
+
+        StringBuilder sb = new StringBuilder(length);
+        
+        for(int i = 0; i< length ; i++){
+            sb.append(WORD.charAt(RANDOM.nextInt(WORD.length())));
+        }
+        
+        return sb.toString();
     }
 
 }

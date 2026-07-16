@@ -3,6 +3,7 @@ package com.example.librashare.controller;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -108,7 +109,7 @@ public class UserController {
         response.setEmail(user.getEmail());
         response.setActive(user.isActive());
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
     }
     
