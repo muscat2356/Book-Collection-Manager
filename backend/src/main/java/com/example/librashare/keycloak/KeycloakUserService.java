@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.example.librashare.exception.exception.BusinessException;
 import com.example.librashare.exception.exception.KeycloakOperationException;
 
 import jakarta.ws.rs.WebApplicationException;
@@ -43,20 +44,16 @@ public class KeycloakUserService {
     public String createUser(String email){
 
         //keycloak接続立ち上げ
-        Keycloak keycloak = buildKeycloak();
-
+        try(Keycloak keycloak = buildKeycloak();){
+            String sub = registerUser(keycloak, email);
             try{
-                String sub = registerUser(keycloak, email);
-                try{
-                    assignRole(keycloak, sub);
-                }catch(RuntimeException e){
-                    deleteUser(keycloak, sub);
-                    throw e;
-                }
-                return sub;
-            }finally{
-                keycloak.close();
+                assignRole(keycloak, sub);
+            }catch(RuntimeException e){
+                deleteUser(keycloak, sub);
+                throw e;
             }
+            return sub;
+        }
     }
 
     /**
@@ -98,6 +95,8 @@ public class KeycloakUserService {
      * @param keycloak
      * @param email
      * @return
+     * @throws KeycloakOperationException 500 外部エラー
+     * @throws BusinessException 409 業務衝突エラー
      */
     private String registerUser(Keycloak keycloak, String email){
 
@@ -121,7 +120,7 @@ public class KeycloakUserService {
                 //メール重複確認
                 if(response.getStatus() == 409 ){
                     logger.error("既に登録されているメールアドレスを使用しています。");
-                    throw new KeycloakOperationException(
+                    throw new BusinessException(
                                 "USER_ALREADY_EXISTS",
                                 "既に登録されているメールアドレスです");
                 }
@@ -143,6 +142,7 @@ public class KeycloakUserService {
      * keycloakユーザー作成のロール付与実行メソッド
      * @param keycloak
      * @param sub
+     * @throws KeycloakOperationException 500 外部エラー
      */
     private void assignRole(Keycloak keycloak, String sub){
         try{
@@ -176,8 +176,7 @@ public class KeycloakUserService {
      */
     private void deleteUser(Keycloak keycloak, String sub){
 
-        try{
-            
+        try{ 
             //keycloakへDELETEメソッドの実行依頼
             keycloak.realm(props.getRealm()).users().get(sub).remove();
             logger.info("ロール付与失敗のためユーザーを削除しました sub={}", sub);
@@ -191,12 +190,11 @@ public class KeycloakUserService {
      * keycloakメールアドレス更新処理メソッド
      * @param keycloakSub
      * @param email
-     * @throws KeycloakOperationException →500エラー
+     * @throws KeycloakOperationException 500 外部エラー
      */
     public void updateEmail(String keycloakSub, String email) {
-        Keycloak keycloak = buildKeycloak();
-
-        try{
+        
+        try(Keycloak keycloak = buildKeycloak();){
             //ユーザー情報の取得
             UserRepresentation user = keycloak.realm(props.getRealm())
                                     .users()
@@ -210,29 +208,24 @@ public class KeycloakUserService {
             //ユーザー更新処理の実行
             keycloak.realm(props.getRealm()).users().get(keycloakSub).update(user);
 
-        }catch(WebApplicationException e){
+        }catch(Exception e){
             logger.error("keycloakのユーザー更新処理に失敗しました。 keycloakID={}", keycloakSub, e);
            
             throw new KeycloakOperationException(
                 "KEYCLOAK_USER_UPDATED_FAILED",
                 "Keycloakのメール更新処理が失敗しました。");
-
-        }finally{
-            keycloak.close();
         }
-        
     }
 
     /**
      * keycloakのuser削除(論理削除)メソッド
      * Enableをoffに更新
      * @param sub　該当userのkeycloakID
+     * @throws KeycloakOperationException 500 外部エラー
      */
     public void disableUser(String sub){
 
-        Keycloak keycloak = buildKeycloak();
-
-        try{
+        try(Keycloak keycloak = buildKeycloak();){
             //keycloak上に存在するuser情報をオブジェクトとして取得
             UserRepresentation user = keycloak.realm(props.getRealm())
                                             .users().get(sub).toRepresentation();
@@ -240,8 +233,12 @@ public class KeycloakUserService {
 
             //keycloakへuser更新処理の実行
             keycloak.realm(props.getRealm()).users().get(sub).update(user);
-        }finally{
-            keycloak.close();
+
+            logger.info("keycloakユーザー削除対応完了 sub={}", sub);
+
+        }catch(Exception e){
+           logger.error("keycloakユーザー削除対応失敗しました。 sub={}", sub, e);
+            throw new KeycloakOperationException("KEYCLOAK_USER_DISABLE_FAILED", "keycloakユーザー削除対応失敗しました。");
         }
 
     }
@@ -250,7 +247,7 @@ public class KeycloakUserService {
      * keycloak接続処理メソッド
      * @return　keycloak接続をリターン
      */
-    public Keycloak buildKeycloak(){
+    private Keycloak buildKeycloak(){
         return KeycloakBuilder.builder()
                 .serverUrl(props.getServerUrl())
                 .realm(props.getRealm())
@@ -263,7 +260,11 @@ public class KeycloakUserService {
         //clientIdとclientSecretの双方を活用したclient_credentialsでの接続処理を採用
     }
 
-
+    /**
+     * keycloakユーザー作成時の一時的なパスワード発行クラス 
+     * @param length
+     * @return
+     */
     private String generateTemporaryPassword(int length){
 
         StringBuilder sb = new StringBuilder(length);

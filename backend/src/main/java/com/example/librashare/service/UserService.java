@@ -25,7 +25,7 @@ import jakarta.transaction.Transactional;
 @Service
 public class UserService {
 
-    private static final Logger logger = LoggerFactory.getLogger(KeycloakUserService.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final KeycloakUserService keycloakUserService;
     private final UserRepository userRepository;
@@ -114,6 +114,7 @@ public class UserService {
         Optional<User> optinalUser = userRepository.findById(id);
 
         if(optinalUser.isEmpty()){
+            logger.warn("ユーザーが存在しません id={}", id);
             throw new EntityNotFoundException("User not found: id=" + id);
         }
 

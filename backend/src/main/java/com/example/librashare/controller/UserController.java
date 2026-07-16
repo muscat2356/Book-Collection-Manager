@@ -3,6 +3,8 @@ package com.example.librashare.controller;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,6 +35,7 @@ import jakarta.validation.Valid;
 public class UserController {
 
     private final UserService userService;
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     public UserController(UserService userService) {
         this.userService = userService;
@@ -73,6 +76,9 @@ public class UserController {
         Optional<User> find = userService.findById(id);
 
         if(find.isEmpty()){
+            // 存在しない ID の照会は仕様上の正常な分岐のため error ではなく warn
+            logger.warn("ユーザーが存在しません id={}", id);
+
             return ResponseEntity.notFound().build();
         }
 
