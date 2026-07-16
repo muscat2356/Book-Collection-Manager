@@ -12,16 +12,16 @@ import java.util.List;
 public class LoansPostListResponse {
 
     //貸出書籍のリスト
-    private List<LoansPostResponse> loans;
+    private List<LoansResponse> loans;
 
     public LoansPostListResponse() {
     }
 
-    public LoansPostListResponse(List<LoansPostResponse> loans) {
+    public LoansPostListResponse(List<LoansResponse> loans) {
         this.loans = loans;
     }
 
-    public List<LoansPostResponse> getLoans() {
+    public List<LoansResponse> getLoans() {
         return loans;
     }
 

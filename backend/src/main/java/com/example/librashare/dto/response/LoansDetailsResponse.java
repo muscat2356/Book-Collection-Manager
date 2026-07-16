@@ -2,34 +2,36 @@ package com.example.librashare.dto.response;
 
 import java.time.OffsetDateTime;
 
+
 /**
- * loans/POSTのレスポンス用DTOクラス
+ * GET/貸出情報と紐づけてUser/BookデータをレスポンスするDTOクラス
  * @author furuyama
  * @since 2026-07-16
+ * @see BookSummary
+ * @see UserSummary
  * @see LoansController
- * @see LoansPostErrorResponse
  */
-public class LoansPostResponse {
-    
+public class LoansDetailsResponse {
+
     private Long id;
     private Long bookCopyId;
-    private Long bookId;
-    private String bookTitle;
-    private Long userId;
+    //書籍情報（ネストして返す）
+    private BookSummary book;
+    //利用者情報（ネストして返す）
+    private UserSummary user;
     private OffsetDateTime borrowedAt;
     private OffsetDateTime returnedAt;
     private String status;
-    
-    public LoansPostResponse() {
+
+    public LoansDetailsResponse() {
     }
 
-    public LoansPostResponse(Long id, Long bookCopyId, Long bookId, String bookTitle, Long userId,
-            OffsetDateTime borrowedAt, OffsetDateTime returnedAt, String status) {
+    public LoansDetailsResponse(Long id, Long bookCopyId, BookSummary book, UserSummary user, OffsetDateTime borrowedAt,
+            OffsetDateTime returnedAt, String status) {
         this.id = id;
         this.bookCopyId = bookCopyId;
-        this.bookId = bookId;
-        this.bookTitle = bookTitle;
-        this.userId = userId;
+        this.book = book;
+        this.user = user;
         this.borrowedAt = borrowedAt;
         this.returnedAt = returnedAt;
         this.status = status;
@@ -43,16 +45,12 @@ public class LoansPostResponse {
         return bookCopyId;
     }
 
-    public Long getBookId() {
-        return bookId;
+    public BookSummary getBook() {
+        return book;
     }
 
-    public String getBookTitle() {
-        return bookTitle;
-    }
-
-    public Long getUserId() {
-        return userId;
+    public UserSummary getUser() {
+        return user;
     }
 
     public OffsetDateTime getBorrowedAt() {
@@ -68,6 +66,5 @@ public class LoansPostResponse {
     }
 
     
-
-
+    
 }
