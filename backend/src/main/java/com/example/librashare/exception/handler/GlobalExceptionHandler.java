@@ -49,13 +49,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
-    @ExceptionHandler(KeycloakOperationException.class)
-    public ResponseEntity<ErrorResponse> KeycloakHandler(KeycloakOperationException e){
+    // @ExceptionHandler(KeycloakOperationException.class)
+    // public ResponseEntity<ErrorResponse> KeycloakHandler(KeycloakOperationException e){
 
-        ErrorResponse error = new ErrorResponse(e.getMessage(), e);
+    //     ErrorResponse error = new ErrorResponse(e.getMessage(), e);
 
-        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
-    }
+    //     return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    // 
 
     /**
      * サーバエラーなどの予期せぬエラーハンドリングメソッド

@@ -7,6 +7,8 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.example.librashare.exception.exception.KeycloakOperationException;
@@ -19,6 +21,7 @@ public class KeycloakUserService {
 
     //keycloak接続情報
     private final KeycloakProperties props;
+    private final Logger logger = LoggerFactory.getLogger(KeycloakUserService.class);
 
     public KeycloakUserService(KeycloakProperties props) {
         this.props = props;
@@ -68,10 +71,39 @@ public class KeycloakUserService {
             return sub;
 
         }catch(WebApplicationException e){
-            throw new KeycloakOperationException("Keycloakユーザーの作成またはロール付与に失敗しました。", e);
+            logger.error("Keycloakユーザー作成に失敗: email={}", email, e);
+            throw new KeycloakOperationException(
+                    "KEYCLOAK_USER_CREATED_FAILED", 
+                    "keycloakユーザー作成またはロール付与処理に失敗しました。");
         }finally{
             keycloak.close();
         }
+    }
+
+
+    public void updateEmail(String keycloakSub, String email) {
+        Keycloak keycloak = buildKeycloak();
+
+        try{
+            UserRepresentation user = keycloak.realm(props.getRealm())
+                                    .users()
+                                    .get(keycloakSub)
+                                    .toRepresentation();
+            
+            user.setEmail(email);
+            user.setUsername(email);
+
+            keycloak.realm(props.getRealm()).users().get(keycloakSub).update(user);
+
+        }catch(WebApplicationException e){
+            logger.error("keycloakのユーザー更新処理に失敗しました。 keycloakID={}", keycloakSub, e);
+            throw new KeycloakOperationException(
+                "KEYCLOAK_USER_UPDATED_FAILED",
+                "Keycloakのメール更新処理が失敗しました。");
+        }finally{
+            keycloak.close();
+        }
+        
     }
 
     /**
@@ -113,6 +145,5 @@ public class KeycloakUserService {
         //ymlに登録されている情報をもとに、接続処理を実行
         //clientIdとclientSecretの双方を活用したclient_credentialsでの接続処理を採用
     }
-
 
 }

@@ -3,6 +3,7 @@ package com.example.librashare.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.librashare.domain.User;
+import com.example.librashare.service.UserService;
 
 /**
  * UserDB処理の実行インターフェース
@@ -11,5 +12,6 @@ import com.example.librashare.domain.User;
  * @see UserService
  */
 public interface UserRepository extends JpaRepository<User, Long> {
-
+    
+    boolean existsByEmail(String email);
 }

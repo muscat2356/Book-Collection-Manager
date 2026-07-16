@@ -3,9 +3,12 @@ package com.example.librashare.service;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.example.librashare.domain.User;
+import com.example.librashare.exception.exception.BusinessException;
 import com.example.librashare.keycloak.KeycloakUserService;
 import com.example.librashare.repository.UserRepository;
 
@@ -21,6 +24,8 @@ import jakarta.transaction.Transactional;
  */
 @Service
 public class UserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(KeycloakUserService.class);
 
     private final KeycloakUserService keycloakUserService;
     private final UserRepository userRepository;
@@ -73,13 +78,24 @@ public class UserService {
         Optional<User> optinalUser = userRepository.findById(id);
 
         if(optinalUser.isEmpty()){
+            logger.error("ユーザーが存在しません id:"+id);
             throw new EntityNotFoundException("User not found: id=" + id);
         }
 
         User user = optinalUser.get();
 
+        if (!user.getEmail().equals(email)&& userRepository.existsByEmail(email)){
+            logger.error("メールアドレスが重複しています email={}",email);
+            throw new BusinessException("EMAIL_ALREADY_EXISTS", "このメールアドレスは既に使用されています");
+        }
+
+
         user.setDisplayName(displayName);
         user.setEmail(email);
+
+        userRepository.saveAndFlush(user);
+
+        keycloakUserService.updateEmail(user.getKeycloakSub(), email);
         
         return user;
     }
