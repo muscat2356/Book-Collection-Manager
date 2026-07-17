@@ -71,6 +71,8 @@ export function BookEditPage(){
           await addBookCopy(apiClient, id)
         } catch (err) {
           setCopyError(err instanceof Error ? err.message : "追加に失敗しました")
+          setCopyBusy(false)
+          return
         } 
         
         try {
@@ -92,6 +94,8 @@ export function BookEditPage(){
           await deleteBookCopy(apiClient, id, copyId)
         } catch (err) {
           setCopyError(err instanceof Error ? err.message : "削除に失敗しました")
+          setCopyBusy(false)
+          return
         }
         
         try {
