@@ -116,7 +116,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> ExceptionHandler(Exception e){
 
-        logger.error("予期せぬエラーが発生しました。", e);
+        logger.error("予期せぬエラーが発生しました。", e, e.getStackTrace());
 
         ErrorResponse error = new ErrorResponse("INTERNAL_SERVER_ERROR", "サーバーエラーが発生しています。");
 

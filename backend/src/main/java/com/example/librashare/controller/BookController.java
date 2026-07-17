@@ -142,7 +142,7 @@ public class BookController {
      * @param copyId　所蔵ID
      * @return　204 
      */
-    @DeleteMapping("s/{id}/copies/{copyId}")
+    @DeleteMapping("/{id}/copies/{copyId}")
     @PreAuthorize("hasAnyRole('admin_employee')")
     public ResponseEntity<CopiesResponse> deleteCopies(@PathVariable Long id, @PathVariable Long copyId){
 
