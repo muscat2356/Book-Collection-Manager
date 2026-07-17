@@ -18,6 +18,7 @@ export function BookEditPage(){
     const [formData, setFormData] = useState<BookFormData | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [copyError, setCopyError] = useState<string | null>(null)
     const [submitting, setSubmitting] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [copyBusy, setCopyBusy] = useState(false)
@@ -64,14 +65,20 @@ export function BookEditPage(){
       async function handleAddCopy() {
         if (!id) return
         if (!window.confirm("所蔵を 1 冊追加しますか？")) return
-        setError(null)
+        setCopyError(null)
         setCopyBusy(true)
         try {
           await addBookCopy(apiClient, id)
-          await reloadBook()
         } catch (err) {
-          setError(err instanceof Error ? err.message : "追加に失敗しました")
-        } finally {
+          setCopyError(err instanceof Error ? err.message : "追加に失敗しました")
+        } 
+        
+        try {
+            await reloadBook()
+        } catch (err) {
+            setCopyError(err instanceof Error ? err.message : "追加に成功しましたが、表示の更新に失敗しました")
+        }
+        finally {
           setCopyBusy(false)
         }
       }
@@ -79,14 +86,20 @@ export function BookEditPage(){
       async function handleDeleteCopy(copyId: number) {
         if (!id) return
         if (!window.confirm(`所蔵 #${copyId} を削除しますか？`)) return
-        setError(null)
+        setCopyError(null)
         setCopyBusy(true)
         try {
           await deleteBookCopy(apiClient, id, copyId)
-          await reloadBook()
         } catch (err) {
-          setError(err instanceof Error ? err.message : "削除に失敗しました")
-        } finally {
+          setCopyError(err instanceof Error ? err.message : "削除に失敗しました")
+        }
+        
+        try {
+            await reloadBook()
+        } catch (err) {
+            setCopyError(err instanceof Error ? err.message : "削除に成功しましたが、表示の更新に失敗しました")
+        }
+        finally {
           setCopyBusy(false)
         }
       }
@@ -225,10 +238,9 @@ export function BookEditPage(){
                 貸出可 {book.availableCount} / 所蔵 {book.totalCount}
             </p>
 
-            {error && (
-                  <p className="page-status page-status--error">{error}</p>
-                )}
-
+            {copyError && (
+                <p className="page-status page-status--error">{copyError}</p>
+            )}
             <button
                 type="button"
                 className="btn btn--primary"
