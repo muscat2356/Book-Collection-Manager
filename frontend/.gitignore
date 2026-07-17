@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# 確認用の一時画像（リポジトリに含めない）
+img/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

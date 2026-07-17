@@ -1,13 +1,13 @@
 import { useState } from "react"
 import { Link, Navigate, useNavigate } from "react-router-dom"
 import { useApiClient } from "../api/ApiClientContext"
-import { createLoan } from "../api/loans"
+import { createLoan, LoanError } from "../api/loans"
 import { useLoanCheckout } from "../loans/LoanContext"
 
 export function CheckoutConfirmPage() {
   const apiClient = useApiClient()
   const navigate = useNavigate()
-  const { user, selectedBookCopies, clearAll } = useLoanCheckout()
+  const { user, selectedBookCopies, removeCopy, clearAll } = useLoanCheckout()
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -32,6 +32,10 @@ export function CheckoutConfirmPage() {
       clearAll()
       navigate("/loans/active")
     } catch (e) {
+      // 409 で失敗した所蔵は選択から外す（残りは選び直せる状態にする）
+      if (e instanceof LoanError && e.failedBookCopyIds?.length) {
+        e.failedBookCopyIds.forEach((id) => removeCopy(id))
+      }
       setError(e instanceof Error ? e.message : "貸出に失敗しました")
     } finally {
       setSubmitting(false)
