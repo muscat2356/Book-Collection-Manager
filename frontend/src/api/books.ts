@@ -1,5 +1,5 @@
 import { isAxiosError, type AxiosInstance } from "axios";
-import type { Book } from "../types/Book";
+import type { Book, BookHolding } from "../types/Book";
 
 export type CreateBookRequest = {
     title: string; author: string; isbn: string; initialCopyCount: number
@@ -64,6 +64,32 @@ export async function deleteBook(
   ): Promise<void> {
     try {
       await apiClient.delete(`/api/books/${id}`)
+    } catch (err) {
+      throw new Error(toErrorMessage(err))
+    }
+  }
+
+  export async function addBookCopy(
+    apiClient: AxiosInstance,
+    bookId: string
+  ): Promise<BookHolding>{
+    try {
+        const response = await apiClient.post<{ id: number; status: "AVAILABLE" | "LOANED" }>(
+            `/api/books/${bookId}/copies`, {}
+        )
+        return response.data
+    } catch (err) {
+        throw new Error(toErrorMessage(err))
+    }
+  }
+
+  export async function deleteBookCopy(
+    apiClient: AxiosInstance,
+    bookId: string,
+    copyId: number
+  ): Promise<void> {
+    try {
+      await apiClient.delete(`/api/books/${bookId}/copies/${copyId}`)
     } catch (err) {
       throw new Error(toErrorMessage(err))
     }

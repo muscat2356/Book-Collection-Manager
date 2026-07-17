@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.example.librashare.exception.dto.ErrorResponse;
+import com.example.librashare.exception.dto.LoansPostErrorResponse;
 import com.example.librashare.exception.exception.BusinessException;
+import com.example.librashare.exception.exception.CopyNotAvailableException;
 import com.example.librashare.exception.exception.KeycloakOperationException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -91,6 +93,22 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 貸出中の所蔵を選択したときの例外処理 -> 409
+     * @param e
+     * @return
+     */
+    @ExceptionHandler(CopyNotAvailableException.class)
+    public ResponseEntity<LoansPostErrorResponse> copyNotAvailableHandler(CopyNotAvailableException e) {
+        logger.warn("貸出不可: {}", e.getFailedBookCopyIds());
+        LoansPostErrorResponse body = new LoansPostErrorResponse(
+            e.getError(),
+            e.getMessage(),
+            e.getFailedBookCopyIds()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    /**
      * サーバエラーなどの予期せぬエラーハンドリングメソッド
      * @param e
      * @return エラーメッセージ、500
@@ -98,7 +116,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> ExceptionHandler(Exception e){
 
-        logger.error("予期せぬエラーが発生しました。", e);
+        logger.error("予期せぬエラーが発生しました。", e, e.getStackTrace());
 
         ErrorResponse error = new ErrorResponse("INTERNAL_SERVER_ERROR", "サーバーエラーが発生しています。");
 
