@@ -55,6 +55,13 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) //CSRFの無効化
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // springdoc-openapi（Swagger UI / OpenAPI JSON）は認証なしで参照可能にする
+                .requestMatchers(
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/v3/api-docs",
+                        "/v3/api-docs/**"
+                ).permitAll()
                 .anyRequest().authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter)));//認可制御
 
