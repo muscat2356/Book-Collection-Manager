@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { Book } from "../types/Book";
-import { deleteBook, fetchBookById, updateBook } from "../api/books";
+import type { Book, CopyStatus } from "../types/Book";
+import { addBookCopy, deleteBook, deleteBookCopy, fetchBookById, updateBook } from "../api/books";
 import { useApiClient } from "../api/ApiClientContext";
 
 export function BookEditPage(){
@@ -18,8 +18,14 @@ export function BookEditPage(){
     const [formData, setFormData] = useState<BookFormData | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [copyError, setCopyError] = useState<string | null>(null)
     const [submitting, setSubmitting] = useState(false)
     const [deleting, setDeleting] = useState(false)
+    const [copyBusy, setCopyBusy] = useState(false)
+
+    function statusLabel(status: CopyStatus): string {
+    return status === "AVAILABLE" ? "貸出可" : "貸出中"
+    }
 
     function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
         e.preventDefault()
@@ -42,6 +48,64 @@ export function BookEditPage(){
           .then(() => navigate("/books"))
           .catch((err) => setError(err.message))
           .finally(() => setDeleting(false))
+      }
+
+      async function reloadBook() {
+        if (!id) return
+        const latest = await fetchBookById(apiClient, id)
+        if (latest) {
+            setBook(latest)
+          } else {
+            setBook(null)
+            setFormData(null)
+            setError("書籍が見つかりません")
+          }
+      }
+
+      async function handleAddCopy() {
+        if (!id) return
+        if (!window.confirm("所蔵を 1 冊追加しますか？")) return
+        setCopyError(null)
+        setCopyBusy(true)
+        try {
+          await addBookCopy(apiClient, id)
+        } catch (err) {
+          setCopyError(err instanceof Error ? err.message : "追加に失敗しました")
+          setCopyBusy(false)
+          return
+        } 
+        
+        try {
+            await reloadBook()
+        } catch (err) {
+            setCopyError(err instanceof Error ? err.message : "追加に成功しましたが、表示の更新に失敗しました")
+        }
+        finally {
+          setCopyBusy(false)
+        }
+      }
+
+      async function handleDeleteCopy(copyId: number) {
+        if (!id) return
+        if (!window.confirm(`所蔵 #${copyId} を削除しますか？`)) return
+        setCopyError(null)
+        setCopyBusy(true)
+        try {
+          await deleteBookCopy(apiClient, id, copyId)
+        } catch (err) {
+          setCopyError(err instanceof Error ? err.message : "削除に失敗しました")
+          setCopyBusy(false)
+          return
+        }
+        
+        try {
+            await reloadBook()
+        } catch (err) {
+            setCopyError(err instanceof Error ? err.message : "削除に成功しましたが、表示の更新に失敗しました")
+        }
+        finally {
+          setCopyBusy(false)
+        }
       }
 
     useEffect(() => {
@@ -172,8 +236,67 @@ export function BookEditPage(){
                 </button>
 
             </form>
+            <section className="holdings">
+            <h2 className="holdings__title">所蔵管理</h2>
+            <p className="page__lead">
+                貸出可 {book.availableCount} / 所蔵 {book.totalCount}
+            </p>
 
+            {copyError && (
+                <p className="page-status page-status--error">{copyError}</p>
+            )}
+            <button
+                type="button"
+                className="btn btn--primary"
+                onClick={handleAddCopy}
+                disabled={copyBusy || submitting || deleting}
+            >
+                {copyBusy ? "処理中…" : "所蔵を 1 冊追加"}
+            </button>
+
+            {(book.holdings ?? []).length === 0 ? (
+                <p className="holdings__empty">所蔵がありません</p>
+            ) : (
+                <table className="holdings__table">
+                <thead>
+                    <tr>
+                    <th scope="col">所蔵 ID</th>
+                    <th scope="col">状態</th>
+                    <th scope="col">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {(book.holdings ?? []).map((h) => {
+                    const canDelete = h.status === "AVAILABLE"
+                    return (
+                        <tr key={h.id}>
+                        <td>#{h.id}</td>
+                        <td>
+                            <span
+                            className={`holdings__status holdings__status--${h.status.toLowerCase()}`}
+                            >
+                            {statusLabel(h.status)}
+                            </span>
+                        </td>
+                        <td>
+                            <button
+                            type="button"
+                            className="btn btn--danger"
+                            disabled={!canDelete || copyBusy || submitting || deleting}
+                            onClick={() => handleDeleteCopy(h.id)}
+                            >
+                            削除
+                            </button>
+                        </td>
+                        </tr>
+                    )
+                    })}
+                </tbody>
+                </table>
+            )}
+            </section>
         </section>
+        
     )
     
 }
