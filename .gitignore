@@ -19,3 +19,4 @@ build/
 
 # Keycloak realm export
 docker/keycloak/import/LibraShare-realm.json
+docker/keycloak/import/LibraShare-realm.json.bak
