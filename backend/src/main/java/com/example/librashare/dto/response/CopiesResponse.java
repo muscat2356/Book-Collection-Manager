@@ -5,14 +5,14 @@ import com.example.librashare.domain.CopyStatus;
 public class CopiesResponse {
 
     private Long id;
-    private CopyStatus copystatus;
+    private CopyStatus status;
 
     public CopiesResponse() {
     }
 
-    public CopiesResponse(Long id, CopyStatus copystatus) {
+    public CopiesResponse(Long id, CopyStatus status) {
         this.id = id;
-        this.copystatus = copystatus;
+        this.status = status;
     }
 
     public Long getId() {
@@ -20,7 +20,7 @@ public class CopiesResponse {
     }
 
     public CopyStatus getCopystatus() {
-        return copystatus;
+        return status;
     }
 
     
