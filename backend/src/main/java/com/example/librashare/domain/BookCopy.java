@@ -42,13 +42,6 @@ public class BookCopy {
         this.status = CopyStatus.AVAILABLE;
     }
 
-    public BookCopy(Long id, Long bookId, CopyStatus available) {
-        this.id = id;
-        book.setId(bookId) ;
-        this.status = CopyStatus.AVAILABLE;
-
-    }
-
     void markAsLoaned(){
         if (this.status != CopyStatus.AVAILABLE) {
             throw new IllegalStateException("貸し出しできない状態です copuID:"+ id);

@@ -15,6 +15,7 @@ import com.example.librashare.domain.Loan;
 import com.example.librashare.domain.LoanStatus;
 import com.example.librashare.domain.User;
 import com.example.librashare.exception.exception.BusinessException;
+import com.example.librashare.exception.exception.CopyNotAvailableException;
 import com.example.librashare.repository.BookCopyRepository;
 import com.example.librashare.repository.LoanRepository;
 import com.example.librashare.repository.UserRepository;
@@ -69,6 +70,10 @@ public class LoansService {
 
         Optional<User> optionalUser = userRepository.findById(userId);
 
+        if (optionalUser.isEmpty()) {
+            throw new BusinessException("USER_NOT_FOUND", "該当ユーザーが見つかりません");
+        }
+
         User user = optionalUser.get();
 
         if (!user.isActive()) {
@@ -87,10 +92,10 @@ public class LoansService {
                                 .toList();
         
         if (!failedId.isEmpty()) {
-            logger.warn("貸出不可の所蔵が含まれています。");
-            throw new BusinessException("COPY_NOT_AVAILABLE", "貸出できない所蔵が含まれています");
+            logger.warn("貸出不可の所蔵が含まれています。failedIds={}", failedId);
+            throw new CopyNotAvailableException(failedId);
         }
-
+        
         OffsetDateTime now = OffsetDateTime.now();
 
         List<Loan> loans = bookCopies.stream()

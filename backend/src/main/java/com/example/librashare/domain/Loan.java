@@ -83,7 +83,7 @@ public class Loan {
 
         this.status = LoanStatus.RETURNED;
         this.returnedAt = returnedAt;
-        this.bookCopy.markAsLoaned();
+        this.bookCopy.markAsAvailable();
     }
 
     /**

@@ -47,6 +47,7 @@ public class LoansController {
      * @return
      */
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('general_employee','admin_employee')")
     public ResponseEntity<List<LoansDetailsResponse>> findAllActive(){
 
         List<Loan> loans = loansService.findActiveLoan();
@@ -89,6 +90,7 @@ public class LoansController {
      * @return
      */
     @PutMapping("/{id}/return")
+    @PreAuthorize("hasAnyRole('general_employee','admin_employee')")
     public ResponseEntity<LoansResponse> returnBook(@PathVariable Long id){
 
         Loan loan = loansService.deleteLoan(id);

@@ -13,12 +13,12 @@ public class LoansPostErrorResponse {
     private String error;
     private String message;
     //貸し出しできない書籍のリスト
-    private List<Integer> failedBookCopyIds;
+    private List<Long> failedBookCopyIds;
 
     public LoansPostErrorResponse() {
     }
 
-    public LoansPostErrorResponse(String error, String message, List<Integer> failedBookCopyIds) {
+    public LoansPostErrorResponse(String error, String message, List<Long> failedBookCopyIds) {
         this.error = error;
         this.message = message;
         this.failedBookCopyIds = failedBookCopyIds;
@@ -32,8 +32,10 @@ public class LoansPostErrorResponse {
         return message;
     }
 
-    public List<Integer> getFailedBookCopyIds() {
+    public List<Long> getFailedBookCopyIds() {
         return failedBookCopyIds;
     }
+
+    
     
 }

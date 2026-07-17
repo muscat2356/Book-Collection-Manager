@@ -76,7 +76,7 @@ public class BookService {
         int copies = Optional.ofNullable(request.getInitialCopyCount()).orElse(0);
 
         List<BookCopy> newCopies = IntStream.range(0, copies)
-        .mapToObj(i -> new BookCopy(null, saved.getId(), CopyStatus.AVAILABLE))
+        .mapToObj(i -> new BookCopy(saved))
         .toList();
 
         copyRepository.saveAll(newCopies);
