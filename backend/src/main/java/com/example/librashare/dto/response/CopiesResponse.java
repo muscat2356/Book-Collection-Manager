@@ -19,7 +19,7 @@ public class CopiesResponse {
         return id;
     }
 
-    public CopyStatus getCopystatus() {
+    public CopyStatus getStatus() {
         return status;
     }
 
