@@ -4,9 +4,13 @@ import { Link } from 'react-router-dom'
 
 type BookCardProps = {
   book: Book
+  to?: string
+  linkLabel?: string
 }
 
-export function BookCard({ book }: BookCardProps) {
+export function BookCard({ book, to, linkLabel = "詳細を見る →" }: BookCardProps) {
+
+  const href = to ?? `/books/${book.id}`
 
   return (
     <article className="book-card">
@@ -24,8 +28,8 @@ export function BookCard({ book }: BookCardProps) {
           <dt>ISBN</dt>
           <dd>ISBN：{book.isbn}</dd>
         </dl>
-        <Link to={`/books/${book.id}`} className="book-card__link">
-          詳細を見る →
+        <Link to={href} className="book-card__link">
+          {linkLabel}
         </Link>
       </div>
     </article>
