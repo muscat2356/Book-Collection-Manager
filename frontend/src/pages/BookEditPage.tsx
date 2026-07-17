@@ -52,8 +52,13 @@ export function BookEditPage(){
       async function reloadBook() {
         if (!id) return
         const latest = await fetchBookById(apiClient, id)
-        if (latest) setBook(latest)
-        else setError("書籍が見つかりません")
+        if (latest) {
+            setBook(latest)
+          } else {
+            setBook(null)
+            setFormData(null)
+            setError("書籍が見つかりません")
+          }
       }
 
       async function handleAddCopy() {
@@ -219,6 +224,10 @@ export function BookEditPage(){
             <p className="page__lead">
                 貸出可 {book.availableCount} / 所蔵 {book.totalCount}
             </p>
+
+            {error && (
+                  <p className="page-status page-status--error">{error}</p>
+                )}
 
             <button
                 type="button"

@@ -1,5 +1,5 @@
 import { isAxiosError, type AxiosInstance } from "axios";
-import type { Book } from "../types/Book";
+import type { Book, BookHolding } from "../types/Book";
 
 export type CreateBookRequest = {
     title: string; author: string; isbn: string; initialCopyCount: number
@@ -69,7 +69,10 @@ export async function deleteBook(
     }
   }
 
-  export async function addBookCopy(apiClient: AxiosInstance, bookId: string){
+  export async function addBookCopy(
+    apiClient: AxiosInstance,
+    bookId: string
+  ): Promise<BookHolding>{
     try {
         const response = await apiClient.post<{ id: number; status: "AVAILABLE" | "LOANED" }>(
             `/api/books/${bookId}/copies`, {}
