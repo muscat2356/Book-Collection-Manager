@@ -10,6 +10,12 @@ import { BookCreatePage } from './pages/BookCreatePage'
 import { BookEditPage } from './pages/BookEditPage'
 import { AccessDeniedPage } from './pages/AccessDeniedPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { LoanProvider } from './loans/LoanContext'
+import { CheckoutLayout } from './components/CheckoutLayout'
+import { CheckoutBookDetailPage } from './pages/CheckoutBookDetailPage'
+import { CheckoutBookListPage } from './pages/CheckoutBookListPage'
+import { CheckoutConfirmPage } from './pages/CheckoutConfirmPage'
+import { CheckoutUserSelectPage } from './pages/CheckoutUserSelectPage'
 
 
 function App() {
@@ -26,6 +32,19 @@ function App() {
             <Route path="/users" element={<UserListPage />} />
             <Route path="/users/new" element={<UserCreatePage />} />
             <Route path="/users/:id/edit" element={<UserEditPage />} />
+            <Route
+              path="/loans/checkout"
+              element={
+                <LoanProvider>
+                  <CheckoutLayout />
+                </LoanProvider>
+              }
+            >
+              <Route index element={<CheckoutUserSelectPage />} />
+              <Route path="books" element={<CheckoutBookListPage />} />
+              <Route path="books/:id" element={<CheckoutBookDetailPage />} />
+              <Route path="confirm" element={<CheckoutConfirmPage />} />
+            </Route>
             <Route element={<ProtectedRoute requireAdmin />}>
               <Route path="/books/new" element={<BookCreatePage />} />
               <Route path="/books/:id/edit" element={<BookEditPage />} />

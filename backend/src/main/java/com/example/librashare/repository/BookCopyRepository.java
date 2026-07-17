@@ -1,10 +1,14 @@
 package com.example.librashare.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.librashare.domain.BookCopy;
-import com.example.librashare.domain.CopyStatus;
+import com.example.librashare.service.BookService;
+
+import jakarta.persistence.LockModeType;
 
 import java.util.List;
 
@@ -17,10 +21,14 @@ import java.util.List;
  * @see
  * BookService
  */
-@Repository
 public interface BookCopyRepository extends JpaRepository<BookCopy, Long> {
-    List<BookCopy> findByBookId(Long bookId);
+    
+    // デッドロック回避のためID昇順でロックを取得
+    //両方のリクエストを待たないように設定
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM BookCopy c WHERE c.id IN :ids ORDER BY c.id")
+    List<BookCopy> findByIdsForUpdate(@Param("ids") List<Long> ids);
 
-    long countByBookId(Long bookId);
+    List<BookCopy> findByBookId(Long id);
 
-    long countByBookIdAndStatus(Long bookId, CopyStatus status);}
+    ;}

@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.example.librashare.exception.dto.ErrorResponse;
+import com.example.librashare.exception.dto.LoansPostErrorResponse;
 import com.example.librashare.exception.exception.BusinessException;
+import com.example.librashare.exception.exception.CopyNotAvailableException;
 import com.example.librashare.exception.exception.KeycloakOperationException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -88,6 +90,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<Void> NotFoundHandler(EntityNotFoundException e){
         return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * 貸出中の所蔵を選択したときの例外処理 -> 409
+     * @param e
+     * @return
+     */
+    @ExceptionHandler(CopyNotAvailableException.class)
+    public ResponseEntity<LoansPostErrorResponse> copyNotAvailableHandler(CopyNotAvailableException e) {
+        logger.warn("貸出不可: {}", e.getFailedBookCopyIds());
+        LoansPostErrorResponse body = new LoansPostErrorResponse(
+            e.getError(),
+            e.getMessage(),
+            e.getFailedBookCopyIds()
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 
     /**
