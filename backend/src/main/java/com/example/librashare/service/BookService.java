@@ -68,6 +68,7 @@ public class BookService {
      * @param BookRequest bookRequest　該当書籍の情報
      * @return　Response 201　作成した書籍の情報を送信
      */
+    @Transactional
     public BookResponse createBook(BookRequest request) {
         Book book = new Book();
         book.setTitle(request.getTitle());
@@ -153,11 +154,22 @@ public class BookService {
             return false;
         }
         Book book = find.get();
-        //bookの論理削除フラグを更新
+
+        //該当書籍の所蔵をリスト化
+        List<BookCopy> copy = copyRepository.findByBookId(id);
+        
+        //LOANEDが存在すればtrue
+        boolean hasLoaded =  copy
+                            .stream()
+                            .anyMatch(c -> c.getStatus() == CopyStatus.LOANED);
 
         //貸出をされている場合に削除できないように例外処理
-        //bussinessExceptionの例外を発生させる
+        //業務衝突で409
+        if(hasLoaded){
+            throw new BusinessException("COPY_NOT_DELETABLE", "貸出中、または貸出履歴がある所蔵のため削除できません");
+        }
 
+        //bookの論理削除フラグを更新
         book.setDeleted(true);
 
         bookRepository.save(book);
@@ -170,19 +182,13 @@ public class BookService {
      * @param id
      * @return
      */
+    @Transactional
     public BookCopy createCopies(Long id) {
 
-        Optional<Book> book = bookRepository.findById(id);
+        Book book = bookRepository.findById(id)
+            .orElseThrow(EntityNotFoundException::new);
 
-        //空チェック 404
-        if(book.isEmpty()){
-            throw new EntityNotFoundException();
-        }
-
-        BookCopy copy = new BookCopy();
-
-        copy.setBookId(id);
-        copy.setStatus(CopyStatus.AVAILABLE);
+        BookCopy copy = new BookCopy(book);
 
         return copyRepository.save(copy);
     }
@@ -201,8 +207,8 @@ public class BookService {
         }
 
         BookCopy book = copy.get();
-        book.setStatus(CopyStatus.LOANED);
-
+        
+ 
         if(book.getStatus() == CopyStatus.LOANED){
             throw new BusinessException(
                     "COPY_NOT_DELETABLE", 
