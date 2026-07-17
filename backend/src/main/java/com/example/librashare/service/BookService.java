@@ -13,10 +13,13 @@ import com.example.librashare.domain.BookCopy;
 import com.example.librashare.domain.CopyStatus;
 import com.example.librashare.dto.request.BookRequest;
 import com.example.librashare.dto.response.BookResponse;
+import com.example.librashare.dto.response.CopiesResponse;
 import com.example.librashare.dto.response.HoldingResponse;
+import com.example.librashare.exception.exception.BusinessException;
 import com.example.librashare.repository.BookCopyRepository;
 import com.example.librashare.repository.BookRepository;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 
 /**
@@ -33,7 +36,6 @@ public class BookService {
     private final BookRepository bookRepository;
     private final BookCopyRepository copyRepository;
 
-    @Autowired
     public BookService(BookRepository bookRepository, BookCopyRepository copyRepository) {
         this.bookRepository = bookRepository;
         this.copyRepository = copyRepository;
@@ -163,6 +165,56 @@ public class BookService {
 
         return true;
     }
+
+    /**
+     * 所蔵の追加　PUT
+     * @param id
+     * @return
+     */
+    public BookCopy createCopies(Long id) {
+
+        Optional<Book> book = bookRepository.findById(id);
+
+        //空チェック 404
+        if(book.isEmpty()){
+            throw new EntityNotFoundException();
+        }
+
+        BookCopy copy = new BookCopy();
+
+        copy.setBookId(id);
+        copy.setStatus(CopyStatus.AVAILABLE);
+
+        return copyRepository.save(copy);
+    }
+
+    /**
+     * 所蔵の1冊を削除する処理 (物理削除)
+     * @param id 該当所蔵書籍
+     */
+    public void deleteCopies(Long id){
+
+        Optional<BookCopy> copy = copyRepository.findById(id);
+
+        //空チェック 404
+        if(copy.isEmpty()){
+            throw new EntityNotFoundException();
+        }
+
+        BookCopy book = copy.get();
+        book.setStatus(CopyStatus.LOANED);
+
+        if(book.getStatus() == CopyStatus.LOANED){
+            throw new BusinessException(
+                    "COPY_NOT_DELETABLE", 
+                    "貸出中、または貸出履歴がある所蔵のため削除できません");
+        }
+
+        copyRepository.delete(book);
+
+    }
+    
+    
 
 
 }
