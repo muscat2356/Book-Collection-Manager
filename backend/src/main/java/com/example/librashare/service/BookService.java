@@ -13,6 +13,7 @@ import com.example.librashare.domain.CopyStatus;
 import com.example.librashare.dto.request.BookRequest;
 import com.example.librashare.dto.response.BookResponse;
 import com.example.librashare.dto.response.HoldingResponse;
+import com.example.librashare.exception.exception.BusinessException;
 import com.example.librashare.repository.BookCopyRepository;
 import com.example.librashare.repository.BookRepository;
 
@@ -150,11 +151,22 @@ public class BookService {
             return false;
         }
         Book book = find.get();
-        //bookの論理削除フラグを更新
+
+        //該当書籍の所蔵をリスト化
+        List<BookCopy> copy = copyRepository.findByBookId(id);
+        
+        //LOANEDが存在すればtrue
+        boolean hasLoaded =  copy
+                            .stream()
+                            .anyMatch(c -> c.getStatus() == CopyStatus.LOANED);
 
         //貸出をされている場合に削除できないように例外処理
-        //bussinessExceptionの例外を発生させる
+        //業務衝突で409
+        if(hasLoaded){
+            throw new BusinessException("COPY_NOT_DELETABLE", "貸出中、または貸出履歴がある所蔵のため削除できません");
+        }
 
+        //bookの論理削除フラグを更新
         book.setDeleted(true);
 
         bookRepository.save(book);
