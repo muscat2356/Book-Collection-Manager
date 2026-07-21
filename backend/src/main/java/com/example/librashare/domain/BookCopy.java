@@ -34,6 +34,9 @@ public class BookCopy {
     @Column(nullable = false, length = 16)
     private CopyStatus status;
 
+    @Column(nullable = false)
+    private boolean deleted = false;
+
     public BookCopy() {
     }
 
@@ -67,6 +70,14 @@ public class BookCopy {
 
     public CopyStatus getStatus() {
         return status;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 
     

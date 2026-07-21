@@ -1,0 +1,1 @@
+ALTER TABLE book_copies ADD COLUMN deleted BOOLEAN NOT NULL DEFAULT false;
