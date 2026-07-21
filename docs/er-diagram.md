@@ -24,6 +24,7 @@ erDiagram
         bigint id PK
         bigint book_id FK "BOOKS.id"
         varchar status "AVAILABLE / LOANED"
+        boolean deleted "論理削除フラグ。true で削除済み"
     }
     USERS {
         bigint id PK
@@ -53,7 +54,7 @@ erDiagram
 
 `loans` は `book_copy_id` / `user_id` を外部キーに持ち、「誰がいつどの所蔵を借りたか」を記録する履歴テーブルです。
 
-貸出可能冊数は `books` に保持せず、`COUNT(book_copies WHERE book_id=? AND status='AVAILABLE')` で集計します。`barcode` / `location` は MVP-A では持たない。
+貸出可能冊数は `books` に保持せず、`COUNT(book_copies WHERE book_id=? AND deleted=false AND status='AVAILABLE')` で集計します。所蔵総数（`totalCount`）・`holdings` も `deleted=false` のみを対象とします。`barcode` / `location` は MVP-A では持たない。
 
 ## 制約（MVP-A の決定事項）
 
@@ -70,7 +71,8 @@ erDiagram
 
 補足:
 
-- `books` は物理削除ではなく **論理削除（`deleted=true`）** を正とします。貸出履歴を壊さないため行は残します。通常の一覧・詳細は `deleted=false` のみを対象とします。書誌削除時、紐づく所蔵に `LOANED` があれば削除不可（業務 409）。
+- `books` は物理削除ではなく **論理削除（`deleted=true`）** を正とします。貸出履歴を壊さないため行は残します。通常の一覧・詳細は `deleted=false` のみを対象とします。書誌削除時、紐づく未削除所蔵に `LOANED` があれば削除不可（業務 409）。
+- `book_copies` も物理削除ではなく **論理削除（`deleted=true`）** を正とします。貸出履歴（`loans`）を壊さないため行は残します。通常の集計・holdings・貸出対象は `deleted=false` のみです。所蔵削除時、`status=LOANED` なら削除不可（業務 409）。`AVAILABLE` なら過去の loans があっても論理削除可です。
 - `users` は物理削除ではなく **論理削除（`is_active=false`）** を正とします（変更なし）。
 
 ### CHECK（整合性）
@@ -112,6 +114,7 @@ CREATE TABLE IF NOT EXISTS book_copies (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   book_id BIGINT NOT NULL,
   status VARCHAR(16) NOT NULL,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
   CONSTRAINT fk_book_copies_book_id FOREIGN KEY (book_id)
     REFERENCES books (id)
     ON DELETE RESTRICT
@@ -168,6 +171,6 @@ CREATE INDEX IF NOT EXISTS idx_loans_user_id ON loans (user_id);
 
 - `users` は貸出対象の利用者（`general_user`）のみを保持する参照テーブルです。認証・パスワード・ロールの正は Keycloak です。
 - 付与ロールは常に `general_user` のため `users` に `role` カラムは持ちません。
-- `loans.status` は `BORROWED` / `RETURNED`、`book_copies.status` は `AVAILABLE` / `LOANED` です（語彙を混同しない）。
+- `loans.status` は `BORROWED` / `RETURNED`、`book_copies.status` は `AVAILABLE` / `LOANED` です（語彙を混同しない）。所蔵の削除状態は `status` ではなく `deleted` フラグで表します。
 - `loans.returned_at` は返却実績日時です。返却予定日 `due_at` は MVP-A のスコープ外です。
 - 延滞管理などの拡張は [future-considerations.md](./future-considerations.md) を参照してください。

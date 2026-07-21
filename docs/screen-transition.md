@@ -22,7 +22,7 @@
 | `/books` | 書誌カード一覧（所蔵数・貸出可能数） | 一般社員以上 | `GET /api/books` |
 | `/books/:id` | 書誌情報 + **所蔵一覧テーブル**（copy id / status）。admin は「編集へ」。貸出・返却・所蔵の追加削除は置かない | 一般社員以上 | `GET /api/books/{id}` |
 | `/books/new` | 書誌登録フォーム（`initialCopyCount`） | 管理社員のみ | `POST /api/books` |
-| `/books/:id/edit` | 書誌フォーム + **所蔵管理**（一覧・追加・AVAILABLE のみ削除）+ 書誌論理削除 | 管理社員のみ | `GET` → `PUT` / `POST .../copies` / `DELETE .../copies/{copyId}` / `DELETE /api/books/{id}` |
+| `/books/:id/edit` | 書誌フォーム + **所蔵管理**（一覧・追加・AVAILABLE のみ論理削除）+ 書誌論理削除 | 管理社員のみ | `GET` → `PUT` / `POST .../copies` / `DELETE .../copies/{copyId}` / `DELETE /api/books/{id}` |
 | `/users` | 利用者カード一覧 | 一般社員以上 | `GET /api/users` |
 | `/users/new` | 氏名・メール登録 | 一般社員以上 | `POST /api/users` |
 | `/users/:id/edit` | 利用者更新・論理削除 | 一般社員以上 | `PUT` / `DELETE /api/users/{id}` |
@@ -82,7 +82,7 @@
 | 初期表示 | `GET /api/books/{id}` | 書誌 + holdings |
 | 書誌保存 | `PUT /api/books/{id}` | title / author / isbn のみ |
 | 所蔵追加 | `POST /api/books/{id}/copies` | 成功後同一画面で holdings を再取得 |
-| 所蔵削除 | `DELETE /api/books/{id}/copies/{copyId}` | `AVAILABLE` のみ。`LOANED` や履歴制約は 409 |
+| 所蔵削除 | `DELETE /api/books/{id}/copies/{copyId}` | 論理削除（`deleted=true`）。`AVAILABLE` のみ可。`LOANED` は 409 |
 | 書誌削除 | `DELETE /api/books/{id}` | 貸出中所蔵があれば 409。成功後 `/books` |
 
 書誌に AVAILABLE が 0 冊でも書誌行は残せる（あとから所蔵追加で復旧可能）。
@@ -148,7 +148,7 @@ flowchart TD
 - **書誌詳細**は所蔵一覧の正の閲覧画面です。**書誌編集**が所蔵の追加・削除と書誌更新・書誌削除の操作点です。
 - **貸出は checkout フローに統一**します。返却は `/loans/active` のみです。
 - checkout 中の選択は `LoanProvider`（Context + `useState`）で保持し、選択中サマリを常設します。
-- `LOANED` の所蔵は削除不可です。409 の `{ error, message }` を画面に表示します。
+- `LOANED` の所蔵は削除不可です。409 の `{ error, message }`（例: 「貸出中の所蔵のため削除できません」）を画面に表示します。所蔵削除は論理削除のため、過去の貸出履歴があっても `AVAILABLE` なら削除できます。
 - 利用者管理の対象は `general_user` のみです。
 
 ## 関連ドキュメント

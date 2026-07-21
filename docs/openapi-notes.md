@@ -322,30 +322,29 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 
 **権限**: `admin_employee`
 
-所蔵を 1 冊削除する（書誌の `DELETE /api/books/{id}` とは別）。書誌編集画面から呼び出す。
+所蔵を 1 冊 **論理削除**する（書誌の `DELETE /api/books/{id}` とは別）。書誌編集画面から呼び出す。物理削除は行わず、`book_copies.deleted=true` にする。
 
 ```json
 // Response 204
 {}
 
-// Response 404（書誌または所蔵が存在しない / 書誌に属さない）
+// Response 404（書誌または所蔵が存在しない / 書誌に属さない / 既に論理削除済み）
 （ボディなし可）
 
-// Response 409（貸出中、または過去の loans が紐づき RESTRICT で削除不可）
+// Response 409（貸出中）
 {
   "error": "COPY_NOT_DELETABLE",
-  "message": "貸出中、または貸出履歴がある所蔵のため削除できません"
+  "message": "貸出中の所蔵のため削除できません"
 }
 ```
 
 処理内容:
 
-1. 書誌 `id` 配下に `copyId` がなければ `404`
+1. 書誌 `id` 配下に未削除の `copyId` がなければ `404`
 2. `status=LOANED` なら `409`
-3. 当該所蔵を参照する `loans` があり FK RESTRICT で削除できない場合も `409`
-4. それ以外は所蔵行を削除し `204`
+3. それ以外（`AVAILABLE`）は `deleted=true` にして `204`（過去の `loans` があっても可）
 
-`AVAILABLE` かつ貸出履歴のない所蔵のみ削除できる想定。所蔵一覧の再表示は既存の `GET /api/books/{id}` を使う（所蔵専用 GET は設けない）。
+`AVAILABLE` の所蔵のみ削除できる想定。`totalCount` / `availableCount` / `holdings` は `deleted=false` のみを対象とする。所蔵一覧の再表示は既存の `GET /api/books/{id}` を使う（所蔵専用 GET は設けない）。
 
 ### DELETE /api/books/{id}
 

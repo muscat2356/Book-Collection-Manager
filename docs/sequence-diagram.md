@@ -190,7 +190,8 @@ sequenceDiagram
 - 利用者管理では Keycloak Admin API を呼び出し、Keycloak 側の利用者とアプリ DB の `users.keycloak_sub` を対応させます。付与ロールは常に `general_user` のため `users` に `role` は持ちません。
 - 利用者登録のリクエストは氏名・メールのみです。初回パスワードは API 側で生成し、Keycloak へ temporary フラグオンで設定します。パスワードはレスポンスに含めません。本人への通知は `general_user` ログイン実装時の将来検討とします。
 - 利用者削除は論理削除で行い、Keycloak 側は `enabled=false`、アプリ DB は `is_active=false` を設定します。過去の `loans` 履歴は保持します。
-- 書誌削除は論理削除で行い、アプリ DB は `books.deleted=true` を設定します。貸出中所蔵（`LOANED`）がある場合は 409 です。過去の `loans` 履歴は保持します。
+- 書誌削除は論理削除で行い、アプリ DB は `books.deleted=true` を設定します。貸出中の未削除所蔵（`LOANED`）がある場合は 409 です。過去の `loans` 履歴は保持します。
+- 所蔵削除も論理削除で行い、アプリ DB は `book_copies.deleted=true` を設定します。`status=LOANED` の場合は 409 です。`AVAILABLE` なら過去の `loans` があっても論理削除できます。集計・holdings・貸出対象は `deleted=false` のみです。
 - 業務・バリデーションエラーのボディは `{ error, message }` で統一し、業務衝突は 409、入力バリデは 400 とする。401/403 は Security 既定のまま固定とする（詳細は [openapi-notes.md](./openapi-notes.md)）。
 - 貸出では同一トランザクション内で各 `book_copies` を `LOANED` にし、`loans`（`BORROWED`）を件数分作成します。
 - 返却では `loans` を `RETURNED` にし、対応する `book_copies` を `AVAILABLE` に戻します。

@@ -26,7 +26,7 @@
 |--------|--------------|--------------------|
 | `general_user` | 貸出対象の利用者 | 貸出履歴の紐付け対象。バックオフィス画面の操作は対象外 |
 | `general_employee` | 一般社員 | 書誌一覧・詳細、利用者管理、checkout 貸出/返却、貸出中一覧 |
-| `admin_employee` | 管理社員 | 一般社員の機能 + 蔵書追加・更新・削除 |
+| `admin_employee` | 管理社員 | 一般社員の機能 + 書誌追加・更新・削除・所蔵追加/削除 |
 
 全ユーザーの認証・ロール管理は Keycloak を正とします。ログイン後のヘッダーはロールに応じて表示項目を切り替えます。
 
@@ -43,22 +43,26 @@
 | F-01 | Keycloak ログイン + 3 ロール RBAC | Security, Keycloak, Docker | Keycloak JS, Protected Route |
 | F-02 | 書誌一覧・詳細（所蔵状態つき） | 参照 API, Flyway | 一覧・詳細画面 |
 | F-02a | 書誌追加（管理社員のみ） | 登録 API（初回所蔵作成） | 追加画面 / ヘッダー導線 |
-| F-02b | 書誌更新（管理社員のみ） | 更新 API | 編集画面 / 管理操作 |
+| F-02b | 書誌更新・所蔵追加/削除（管理社員のみ） | 更新 API・copies API | 編集画面（所蔵管理つき） |
 | F-02c | 書誌削除（管理社員のみ） | 削除 API | 削除操作 / 確認 UI |
 | F-04 | 貸出 / 返却 + 所蔵 status 連動 | 一括貸出 API（`bookCopyIds`） | checkout UI / 返却 |
 | F-05 | 貸出中一覧（利用者情報つき） | `GET /api/loans/active` | 貸出中一覧 UI |
 | F-06 | 利用者登録・更新・削除 | Keycloak Admin API 連携, `users` テーブル連携 | 利用者管理画面 |
 | F-07 | `docker compose up` | Compose 全体 | フロント dev 手順 |
 
-- [x] F-01 Keycloak ログイン（ロール: `general_user` / `general_employee` / `admin_employee`）— フロント SPA 認証・認可済み。API Bearer 注入は F-02 前
-- [ ] F-02 書誌一覧・詳細表示（所蔵状態つき）
-- [ ] F-02a 書誌追加（管理社員のみ・初回所蔵冊数）
-- [ ] F-02b 書誌更新（管理社員のみ）
-- [ ] F-02c 書誌削除（管理社員のみ・貸出中所蔵があれば 409）
-- [ ] F-04 一括貸出・返却（`bookCopyIds` + 所蔵 status 連動・checkout UI）
-- [ ] F-05 貸出中一覧（利用者情報つき）
-- [ ] F-06 利用者登録・更新・削除（Keycloak 管理。社員は対象外）
-- [ ] F-07 デモ環境の Docker 一括起動
+#### 達成状況（2026-07 時点・`develop`）
+
+MVP-A の実装・マージは一通り完了。書誌/所蔵分離・checkout 一括貸出・利用者管理まで API + SPA が揃っている。残りは結合確認・デモ仕上げと、余力があれば MVP-B（F-03 / F-11 / F-10）。
+
+- [x] F-01 Keycloak ログイン（ロール: `general_user` / `general_employee` / `admin_employee`）— SPA 認証・認可 + API Bearer JWT 注入済み
+- [x] F-02 書誌一覧・詳細表示（所蔵状態つき・`totalCount` / `availableCount` / `holdings`）
+- [x] F-02a 書誌追加（管理社員のみ・`initialCopyCount` で初回所蔵作成）
+- [x] F-02b 書誌更新 + 編集画面での所蔵 1 冊追加/論理削除（AVAILABLE のみ削除可。LOANED は 409）
+- [x] F-02c 書誌削除（管理社員のみ・貸出中所蔵があれば 409）
+- [x] F-04 一括貸出・返却（`bookCopyIds` + 所蔵 status 連動・`/loans/checkout`）
+- [x] F-05 貸出中一覧（利用者情報つき・`/loans/active`）
+- [x] F-06 利用者登録・更新・削除（対象は `general_user` のみ。社員は Keycloak コンソール）
+- [x] F-07 デモ環境の Docker 一括起動（`docker compose up` + フロント `npm run dev`）
 
 #### F-04 貸出フロー（MVP-A）
 
@@ -73,7 +77,7 @@
 | データ | 役割 |
 |--------|------|
 | `books` | 書誌（タイトル単位） |
-| `book_copies` | 所蔵 1 冊（`AVAILABLE` / `LOANED`）。貸出可能冊数はここから集計 |
+| `book_copies` | 所蔵 1 冊（`AVAILABLE` / `LOANED`、論理削除 `deleted`）。貸出可能冊数は未削除分から集計 |
 | `loans` | 誰がいつどの所蔵を借りたか（`book_copy_id`） |
 | `users.keycloak_sub` | Keycloak ユーザーと貸出履歴の紐付け |
 
@@ -162,13 +166,14 @@
 
 ---
 
-## リポジトリ構成（予定）
+## リポジトリ構成
 
 ```
 .
 ├── backend/          # Spring Boot API
 ├── frontend/         # React SPA
-├── docker/           # Docker Compose, Keycloak 設定
+├── docker/           # Keycloak realm 設定など
+├── docker-compose.yml
 ├── docs/             # ER 図, OpenAPI, 画面設計
 └── README.md
 ```
@@ -180,13 +185,13 @@
 | テーブル | カラム |
 |----------|--------|
 | `books` | id, title, author, isbn, deleted, created_at |
-| `book_copies` | id, book_id, status（AVAILABLE / LOANED） |
+| `book_copies` | id, book_id, status（AVAILABLE / LOANED）, deleted |
 | `users` | id, keycloak_sub, display_name, email, is_active, updated_at |
 | `loans` | id, book_copy_id, user_id, borrowed_at, returned_at, status（BORROWED / RETURNED） |
 
 `users` は貸出対象の利用者（`general_user`）のみを保持する参照テーブルで、認証・ロール管理の正は Keycloak とする。社員・管理社員は `users` に登録せず、Keycloak 管理コンソールで管理する。ロールは Keycloak（JWT）で判定するため `users` に `role` カラムは持たない。`books` は書誌、`book_copies` は所蔵 1 冊である。貸出可能冊数は `stock_count` カラムではなく所蔵の集計で表す。`loans` は所蔵（`book_copy_id`）と利用者を紐づける。ER の詳細は [docs/er-diagram.md](docs/er-diagram.md)。
 
-書誌削除は **論理削除**（`books.deleted=true`）とする。貸出中所蔵（`LOANED`）がある書誌は削除不可（`409`）。利用者削除は **論理削除**（`users.is_active=false`）＋ Keycloak 無効化とする。利用者一覧の通常表示は `is_active=true` のみ、書誌一覧の通常表示は `deleted=false` のみとする。貸出中の利用者は削除不可（`409`）。
+書誌削除は **論理削除**（`books.deleted=true`）とする。貸出中の未削除所蔵（`LOANED`）がある書誌は削除不可（`409`）。所蔵削除も **論理削除**（`book_copies.deleted=true`）とする。`status=LOANED` の所蔵は削除不可（`409`）。`AVAILABLE` なら過去の貸出履歴があっても論理削除可。集計・holdings・貸出対象は `deleted=false` のみ。利用者削除は **論理削除**（`users.is_active=false`）＋ Keycloak 無効化とする。利用者一覧の通常表示は `is_active=true` のみ、書誌一覧の通常表示は `deleted=false` のみとする。貸出中の利用者は削除不可（`409`）。
 
 ## API エンドポイント
 
@@ -197,7 +202,7 @@
 | POST | `/api/books` | 書誌追加（`initialCopyCount` で所蔵作成） | 管理社員のみ |
 | PUT | `/api/books/{id}` | 書誌更新（冊数フィールドなし） | 管理社員のみ |
 | POST | `/api/books/{id}/copies` | 所蔵 1 冊追加（編集画面） | 管理社員のみ |
-| DELETE | `/api/books/{id}/copies/{copyId}` | 所蔵 1 冊削除（AVAILABLE のみ。編集画面） | 管理社員のみ |
+| DELETE | `/api/books/{id}/copies/{copyId}` | 所蔵 1 冊論理削除（AVAILABLE のみ。LOANED は 409。編集画面） | 管理社員のみ |
 | DELETE | `/api/books/{id}` | 書誌削除（論理削除。貸出中所蔵があれば 409） | 管理社員のみ |
 | GET | `/api/users` | 利用者一覧（`general_user` のみ） | 一般社員・管理社員 |
 | GET | `/api/users/{id}` | 利用者詳細 | 一般社員・管理社員 |
@@ -220,7 +225,7 @@
 | 一般社員 | 書誌一覧、貸出、貸出中一覧、利用者管理、ログアウト |
 | 管理社員 | 書誌一覧、貸出、貸出中一覧、利用者管理、書誌追加、管理メニュー、ログアウト |
 
-管理社員向けの書誌更新・削除・所蔵追加は、書誌詳細または編集画面の管理社員専用操作として表示する。貸出は `/loans/checkout` から行う。
+管理社員向けの書誌更新・削除・所蔵追加/削除は、書誌編集画面（`/books/:id/edit`）の管理社員専用操作として表示する。貸出は `/loans/checkout` から行う（通常の書誌詳細からは貸出しない）。
 
 ---
 
@@ -341,11 +346,9 @@
 
 ## 起動方法
 
-> 実装完了後に具体コマンドを追記してください。
-
 ```bash
 # 1. リポジトリを clone
-git clone https://github.com/<your-org>/LibraShare.git
+git clone https://github.com/spiritualmasa/LibraShare.git
 cd LibraShare
 
 # 2. バックエンド + DB + Keycloak を起動

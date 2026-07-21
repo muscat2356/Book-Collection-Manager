@@ -86,8 +86,9 @@ erDiagram
     }
 ```
 
-- `books.stock_count` **廃止**。貸出可能冊数 = `COUNT(book_copies WHERE book_id=? AND status='AVAILABLE')`
+- `books.stock_count` **廃止**。貸出可能冊数 = `COUNT(book_copies WHERE book_id=? AND deleted=false AND status='AVAILABLE')`
 - 貸出の紐付けは **`book_copies.id`**
+- 所蔵削除は **論理削除（`book_copies.deleted=true`）**。`status` に `DELETED` は足さない
 - `barcode` / `location` カラムは作らない
 
 ### Flyway 移行（Member A）
@@ -96,6 +97,7 @@ erDiagram
 2. 既存 `books` 各行について、旧 `stock_count` 件の `AVAILABLE` 行を投入
 3. `loans.book_id` → `loans.book_copy_id`（既存貸出が無いか少ない前提）
 4. `books.stock_count` 削除
+5. （追補）`book_copies.deleted BOOLEAN NOT NULL DEFAULT false` を追加
 
 ---
 
@@ -361,8 +363,8 @@ export type Book = {
 | フィールド | 現行 | 変更後 |
 |------------|------|--------|
 | `stockCount` | 手入力・保持 | **廃止**（意味は `availableCount`） |
-| `totalCount` | なし | 所蔵総数（AVAILABLE+LOANED、未削除書誌に紐づく） |
-| `availableCount` | なし | `status=AVAILABLE` の件数 |
+| `totalCount` | なし | 所蔵総数（AVAILABLE+LOANED、`deleted=false` のみ） |
+| `availableCount` | なし | `deleted=false` かつ `status=AVAILABLE` の件数 |
 | `holdings` | なし | 一覧では含めない（または空配列） |
 
 ---
@@ -534,7 +536,7 @@ export type Book = {
 
 ### 6.6 DELETE /api/books/{id}/copies/{copyId}（新規・admin）
 
-所蔵を 1 冊削除する。既存の `DELETE /api/books/{id}`（書誌論理削除）とは別。編集画面から呼ぶ。
+所蔵を 1 冊 **論理削除**する（`book_copies.deleted=true`）。既存の `DELETE /api/books/{id}`（書誌論理削除）とは別。編集画面から呼ぶ。物理削除は行わない。
 
 **Response 204**
 
@@ -547,16 +549,16 @@ export type Book = {
 ```json
 {
   "error": "COPY_NOT_DELETABLE",
-  "message": "貸出中、または貸出履歴がある所蔵のため削除できません"
+  "message": "貸出中の所蔵のため削除できません"
 }
 ```
 
 | 条件 | 結果 |
 |------|------|
-| `AVAILABLE` かつ loans なし | 204（行削除） |
+| `AVAILABLE`（過去 loans の有無は問わない） | 204（`deleted=true`） |
 | `LOANED` | 409 |
-| 過去 loans があり FK RESTRICT | 409 |
-| 所蔵一覧の再表示 | 既存 `GET /api/books/{id}` を再利用 |
+| 所蔵なし / 書誌に属さない / 既に `deleted=true` | 404 |
+| 所蔵一覧の再表示 | 既存 `GET /api/books/{id}` を再利用（未削除のみ） |
 
 ---
 
@@ -801,6 +803,8 @@ public class BookCopy {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
     private CopyStatus status;
+    @Column(nullable = false)
+    private boolean deleted = false;
 }
 
 // Loan: book_copy_id に置換
@@ -839,8 +843,9 @@ Optional<BookCopy> findByIdForUpdate(@Param("id") Long id);
 
 書誌作成: `initialCopyCount` 件の AVAILABLE を insert。  
 `POST .../copies`: AVAILABLE を 1 件。  
-`DELETE .../copies/{copyId}`: AVAILABLE かつ履歴なしのみ。LOANED / 履歴ありは 409。  
-書誌論理削除: `count(LOANED)>0` なら 409。
+`DELETE .../copies/{copyId}`: `AVAILABLE` なら `deleted=true`（履歴があっても可）。`LOANED` は 409。  
+書誌論理削除: 未削除所蔵のうち `count(LOANED)>0` なら 409。  
+集計・holdings・貸出対象: `deleted=false` のみ。
 
 ### 8.2 Frontend（Member B）
 
