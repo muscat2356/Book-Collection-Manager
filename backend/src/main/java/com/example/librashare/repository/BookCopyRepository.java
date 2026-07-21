@@ -26,9 +26,8 @@ public interface BookCopyRepository extends JpaRepository<BookCopy, Long> {
     // デッドロック回避のためID昇順でロックを取得
     //両方のリクエストを待たないように設定
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT c FROM BookCopy c WHERE c.id IN :ids ORDER BY c.id")
+    @Query("SELECT c FROM BookCopy c WHERE c.id IN :ids AND c.deleted = false ORDER BY c.id")
     List<BookCopy> findByIdsForUpdate(@Param("ids") List<Long> ids);
 
-    List<BookCopy> findByBookId(Long id);
-
-    ;}
+    List<BookCopy> findByBookIdAndDeletedFalse(Long id);
+    }

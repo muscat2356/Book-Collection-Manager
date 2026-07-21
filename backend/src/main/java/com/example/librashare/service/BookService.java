@@ -12,7 +12,6 @@ import com.example.librashare.domain.BookCopy;
 import com.example.librashare.domain.CopyStatus;
 import com.example.librashare.dto.request.BookRequest;
 import com.example.librashare.dto.response.BookResponse;
-import com.example.librashare.dto.response.CopiesResponse;
 import com.example.librashare.dto.response.HoldingResponse;
 import com.example.librashare.exception.exception.BusinessException;
 import com.example.librashare.repository.BookCopyRepository;
@@ -113,7 +112,7 @@ public class BookService {
      * @return　BookResponseを返還
      */
     private BookResponse toResponse(Book book, boolean incluedeHoldings) {
-        List<BookCopy> copies = copyRepository.findByBookId(book.getId());
+        List<BookCopy> copies = copyRepository.findByBookIdAndDeletedFalse(book.getId());
 
         // 確認しないとここで例外？
         int total = copies.size();
@@ -156,7 +155,7 @@ public class BookService {
         Book book = find.get();
 
         //該当書籍の所蔵をリスト化
-        List<BookCopy> copy = copyRepository.findByBookId(id);
+        List<BookCopy> copy = copyRepository.findByBookIdAndDeletedFalse(id);
         
         //LOANEDが存在すればtrue
         boolean hasLoaded =  copy
@@ -194,7 +193,7 @@ public class BookService {
     }
 
     /**
-     * 所蔵の1冊を削除する処理 (物理削除)
+     * 所蔵の1冊を削除する処理 (論理削除)
      * @param id 該当所蔵書籍
      */
     public void deleteCopies(Long id){
@@ -207,15 +206,19 @@ public class BookService {
         }
 
         BookCopy book = copy.get();
+
+        if (book.isDeleted()) {
+            throw new EntityNotFoundException();
+        }
         
- 
         if(book.getStatus() == CopyStatus.LOANED){
             throw new BusinessException(
                     "COPY_NOT_DELETABLE", 
                     "貸出中、または貸出履歴がある所蔵のため削除できません");
         }
 
-        copyRepository.delete(book);
+        book.setDeleted(true);
+        copyRepository.save(book);
 
     }
     
