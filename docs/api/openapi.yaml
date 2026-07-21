@@ -16,6 +16,8 @@ info:
     注意:
     - 利用者削除時の `409 USER_HAS_ACTIVE_LOANS` は実装予定を含む正式仕様です。
     - 所蔵削除 `DELETE /api/books/{id}/copies/{copyId}` は別 Issue で実装継続中ですが、契約は本仕様を正とします。
+    - 同一書誌（`books.id`）は同一利用者につき同時に 1 冊まで（リクエスト内・既存 BORROWED の両方）。
+    - 書誌は `publisher`（必須）と小カテゴリ（任意）を持つ。カテゴリは大→中→小の 3 段。
 servers:
   - url: http://localhost:8081
     description: Docker Compose のバックエンド
@@ -24,6 +26,8 @@ tags:
     description: 書誌 API
   - name: BookCopies
     description: 所蔵 API
+  - name: Categories
+    description: 大中小カテゴリ API
   - name: Users
     description: 貸出対象利用者 API
   - name: Loans
@@ -55,9 +59,11 @@ paths:
                   title: リーダブルコード
                   author: Dustin Boswell
                   isbn: 978-4-87311-565-8
+                  publisher: オライリー・ジャパン
                   totalCount: 3
                   availableCount: 2
                   holdings: []
+                  category: null
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -70,6 +76,7 @@ paths:
       summary: 書誌を登録
       description: |
         書誌と `initialCopyCount` 件の所蔵を登録します。
+        `publisher` は必須です。`categorySmallId` は任意（小カテゴリのみ指定可）。
         現在の実装では `initialCopyCount` が省略または null の場合は 0 件として扱います。
         権限: `admin_employee`
       requestBody:
@@ -82,6 +89,8 @@ paths:
               title: リーダブルコード
               author: Dustin Boswell
               isbn: 978-4-87311-565-8
+              publisher: オライリー・ジャパン
+              categorySmallId: 100
               initialCopyCount: 3
       responses:
         "201":
@@ -95,9 +104,17 @@ paths:
                 title: リーダブルコード
                 author: Dustin Boswell
                 isbn: 978-4-87311-565-8
+                publisher: オライリー・ジャパン
                 totalCount: 3
                 availableCount: 3
                 holdings: []
+                category:
+                  smallId: 100
+                  smallName: Java
+                  mediumId: 10
+                  mediumName: プログラミング
+                  largeId: 1
+                  largeName: 技術
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -129,6 +146,7 @@ paths:
                 title: リーダブルコード
                 author: Dustin Boswell
                 isbn: 978-4-87311-565-8
+                publisher: オライリー・ジャパン
                 totalCount: 3
                 availableCount: 2
                 holdings:
@@ -138,6 +156,13 @@ paths:
                     status: LOANED
                   - id: 15
                     status: AVAILABLE
+                category:
+                  smallId: 100
+                  smallName: Java
+                  mediumId: 10
+                  mediumName: プログラミング
+                  largeId: 1
+                  largeName: 技術
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -152,6 +177,7 @@ paths:
       summary: 書誌を更新
       description: |
         書誌情報を更新します。
+        `publisher` は必須。`categorySmallId` は任意（null でカテゴリ解除可）。
         現在の実装では作成時と同じ `BookRequest` を受け取りますが、
         `initialCopyCount` は更新処理で使用しません。
         権限: `admin_employee`
@@ -165,6 +191,8 @@ paths:
               title: リーダブルコード 改訂版
               author: Dustin Boswell
               isbn: 978-4-87311-565-8
+              publisher: オライリー・ジャパン
+              categorySmallId: 100
       responses:
         "200":
           description: 更新成功
@@ -177,9 +205,17 @@ paths:
                 title: リーダブルコード 改訂版
                 author: Dustin Boswell
                 isbn: 978-4-87311-565-8
+                publisher: オライリー・ジャパン
                 totalCount: 3
                 availableCount: 2
                 holdings: []
+                category:
+                  smallId: 100
+                  smallName: Java
+                  mediumId: 10
+                  mediumName: プログラミング
+                  largeId: 1
+                  largeName: 技術
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -280,6 +316,42 @@ paths:
               example:
                 error: COPY_NOT_DELETABLE
                 message: 貸出中、または貸出履歴がある所蔵のため削除できません
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/categories/tree:
+    get:
+      tags: [Categories]
+      operationId: getCategoryTree
+      summary: 大中小カテゴリのツリーを取得
+      description: |
+        書誌登録・編集のカスケード選択用に、大→中→小のネスト一覧を返します。
+        書誌が紐づくのは小カテゴリのみです。
+        権限: `general_employee` / `admin_employee`
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryNode"
+              example:
+                - id: 1
+                  name: 技術
+                  children:
+                    - id: 10
+                      name: プログラミング
+                      children:
+                        - id: 100
+                          name: Java
+                        - id: 101
+                          name: TypeScript
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -478,6 +550,12 @@ paths:
       description: |
         利用者 1 名に対して複数所蔵を 1 リクエストで一括貸出します。
         1 件でも貸出不可の所蔵が含まれる場合、全件ロールバックして 409 を返します。
+
+        同一書誌は一人一冊まで:
+        - リクエスト内で同一 `bookId` の所蔵を 2 件以上含めない
+        - 当該利用者が既に同一書誌を `BORROWED` で借りている場合も不可
+        - 異なる書誌の所蔵をまとめて貸出すことは可
+
         権限: `general_employee` / `admin_employee`
       requestBody:
         required: true
@@ -487,7 +565,7 @@ paths:
               $ref: "#/components/schemas/LoansRequest"
             example:
               userId: 10
-              bookCopyIds: [12, 15]
+              bookCopyIds: [12, 25]
       responses:
         "201":
           description: 貸出成功
@@ -506,9 +584,9 @@ paths:
                     returnedAt: null
                     status: BORROWED
                   - id: 43
-                    bookCopyId: 15
-                    bookId: 1
-                    bookTitle: リーダブルコード
+                    bookCopyId: 25
+                    bookId: 2
+                    bookTitle: 達人プログラマー
                     userId: 10
                     borrowedAt: "2026-06-30T10:00:00Z"
                     returnedAt: null
@@ -522,7 +600,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: 利用者状態不正、または貸出不可の所蔵が含まれる
+          description: 利用者状態不正、貸出不可の所蔵、または同一書誌の重複貸出
           content:
             application/json:
               schema:
@@ -546,6 +624,11 @@ paths:
                     error: COPY_NOT_AVAILABLE
                     message: 貸出できない所蔵が含まれています
                     failedBookCopyIds: [15]
+                bookAlreadyLoaned:
+                  summary: 同一書誌を既に借りている、またはリクエスト内で重複
+                  value:
+                    error: BOOK_ALREADY_LOANED_BY_USER
+                    message: 同じ書誌は一人一冊までです
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -761,27 +844,71 @@ components:
       type: object
       additionalProperties: false
       description: |
-        現在の DTO には Bean Validation 制約がありません。
+        `publisher` は必須。`categorySmallId` は小カテゴリのみ指定可（任意）。
         `initialCopyCount` は書誌更新時には使用されません。
+      required: [title, author, publisher]
       properties:
         title:
-          type:
-            - string
-            - "null"
+          type: string
         author:
-          type:
-            - string
-            - "null"
+          type: string
         isbn:
           type:
             - string
             - "null"
+        publisher:
+          type: string
+          maxLength: 255
+          description: 出版社（NOT NULL）
+        categorySmallId:
+          type:
+            - integer
+            - "null"
+          format: int64
+          description: 小カテゴリ ID。未設定は null
         initialCopyCount:
           type:
             - integer
             - "null"
           format: int32
           description: 省略または null の場合は 0
+
+    BookCategoryPath:
+      type: object
+      additionalProperties: false
+      required: [smallId, smallName, mediumId, mediumName, largeId, largeName]
+      properties:
+        smallId:
+          type: integer
+          format: int64
+        smallName:
+          type: string
+        mediumId:
+          type: integer
+          format: int64
+        mediumName:
+          type: string
+        largeId:
+          type: integer
+          format: int64
+        largeName:
+          type: string
+
+    CategoryNode:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryNode"
+          description: 大・中のみ。小は children なしまたは空
 
     BookResponse:
       type: object
@@ -791,9 +918,11 @@ components:
         - title
         - author
         - isbn
+        - publisher
         - totalCount
         - availableCount
         - holdings
+        - category
       properties:
         id:
           type: integer
@@ -810,6 +939,8 @@ components:
           type:
             - string
             - "null"
+        publisher:
+          type: string
         totalCount:
           type: integer
           format: int32
@@ -822,6 +953,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/HoldingResponse"
+        category:
+          oneOf:
+            - $ref: "#/components/schemas/BookCategoryPath"
+            - type: "null"
 
     UserRequest:
       type: object

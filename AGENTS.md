@@ -64,19 +64,22 @@ WebSocket、一般ユーザー向けマイページ、`GET /api/loans/me`、延�
 
 ## 設計ドキュメント（正）
 
-- [docs/refactor-holdings-and-checkout.md](docs/refactor-holdings-and-checkout.md) — 書誌/所蔵分離・checkout 一括貸出（確定）
-- [docs/screen-transition.md](docs/screen-transition.md) — 画面・ルート
-- [docs/openapi-notes.md](docs/openapi-notes.md) — API 契約
-- [docs/sequence-diagram.md](docs/sequence-diagram.md) — フロー
-- [docs/er-diagram.md](docs/er-diagram.md) — DB
-- [docs/frontend-gap-analysis.md](docs/frontend-gap-analysis.md) — フロント差分リスト
+索引: [docs/README.md](docs/README.md)
+
+- [docs/design/refactor-holdings-and-checkout.md](docs/design/refactor-holdings-and-checkout.md) — 書誌/所蔵分離・checkout 一括貸出（確定）
+- [docs/design/screen-transition.md](docs/design/screen-transition.md) — 画面・ルート
+- [docs/api/openapi-notes.md](docs/api/openapi-notes.md) — API 契約
+- [docs/design/sequence-diagram.md](docs/design/sequence-diagram.md) — フロー
+- [docs/database/er-diagram.md](docs/database/er-diagram.md) — DB
+- [docs/design/frontend-gap-analysis.md](docs/design/frontend-gap-analysis.md) — フロント差分リスト
+- [docs/refactoring/review-refactoring-diff.md](docs/refactoring/review-refactoring-diff.md) — レビュー指摘の設計差分
 
 ## AI Agent への依頼方針
 
 ### Member A（バック）
 
 - **実装は本人が手で行う**。Agent は下書きの一括生成より、差分整理・設計確認・エラー原因の説明を優先する
-- 依頼時は機能 ID（F-02 / F-04 等）か `docs/refactor-holdings-and-checkout.md` / `docs/openapi-notes.md` を添える
+- 依頼時は機能 ID（F-02 / F-04 等）か `docs/design/refactor-holdings-and-checkout.md` / `docs/api/openapi-notes.md` を添える
 - レイヤ構成（controller / service / repository / domain / dto / Flyway）に合わせる
 - 旧単件貸出（`bookId` + `stock_count`）は実装せず、所蔵分離後の契約で進める
 
@@ -110,7 +113,7 @@ WebSocket、一般ユーザー向けマイページ、`GET /api/loans/me`、延�
 - Java 21 + Spring Boot（controller / service / repository / domain / dto）
 - DB 変更は Flyway 追加のみ（既存 V* を書き換えない）
 - エラー: `{ error, message }`。入力 400 / 業務衝突 409。認可は `@PreAuthorize` + JWT
-- 書誌/所蔵分離・一括貸出は [docs/refactor-holdings-and-checkout.md](docs/refactor-holdings-and-checkout.md) が正
+- 書誌/所蔵分離・一括貸出は [docs/design/refactor-holdings-and-checkout.md](docs/design/refactor-holdings-and-checkout.md) が正
 
 ## 参照リポジトリ
 

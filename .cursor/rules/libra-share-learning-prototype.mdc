@@ -21,7 +21,7 @@ alwaysApply: false
 
 ## Agent への依頼
 
-実装は本人が行う。差分は `docs/frontend-gap-analysis.md` を参照。
+実装は本人が行う。差分は `docs/design/frontend-gap-analysis.md` を参照。
 
 ## ルールの同期
 

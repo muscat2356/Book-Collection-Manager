@@ -6,6 +6,6 @@
 
 - [../AGENTS.md](../AGENTS.md) — プロジェクト共通ガイド
 - [../.cursor/rules/](../.cursor/rules/) — Cursor ルール（`libra-share-backend.mdc` 等）
-- [../docs/refactor-holdings-and-checkout.md](../docs/refactor-holdings-and-checkout.md) — 書誌/所蔵分離・貸出（確定）
-- [../docs/openapi-notes.md](../docs/openapi-notes.md) — API 契約
-- [../docs/er-diagram.md](../docs/er-diagram.md) — DB
+- [../docs/design/refactor-holdings-and-checkout.md](../docs/design/refactor-holdings-and-checkout.md) — 書誌/所蔵分離・貸出（確定）
+- [../docs/api/openapi-notes.md](../docs/api/openapi-notes.md) — API 契約
+- [../docs/database/er-diagram.md](../docs/database/er-diagram.md) — DB

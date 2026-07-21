@@ -4,9 +4,9 @@ Member B（フロント）向け。LibraShare の蔵書 API 接続（F-02）を�
 
 設計の正は引き続き以下を参照してください。
 
-- [openapi-notes.md](./openapi-notes.md) — API 契約（パス・レスポンス形式）
-- [sequence-diagram.md](./sequence-diagram.md) — 蔵書 CRUD フロー
-- [frontend-gap-analysis.md](./frontend-gap-analysis.md) — 残タスク一覧
+- [openapi-notes.md](../api/openapi-notes.md) — API 契約（パス・レスポンス形式）
+- [sequence-diagram.md](../design/sequence-diagram.md) — 蔵書 CRUD フロー
+- [frontend-gap-analysis.md](../design/frontend-gap-analysis.md) — 残タスク一覧
 - [frontend-keycloak-learning.md](./frontend-keycloak-learning.md) — F-01 認証（前提）
 
 ---
@@ -310,7 +310,7 @@ function toErrorMessage(err: unknown): string {
 | 通常の `Error`（ネットワーク切断など） | `instanceof Error` | `err.message` | `"Network Error"` 等 |
 | 上記以外（稀） | 最後のフォールバック | `"不明なエラーが発生しました"` | 想定外の throw |
 
-API のエラーボディ共通仕様（`{ error, message }` / 400・409 / 401・403 固定）は [openapi-notes.md](./openapi-notes.md) の「エラーレスポンス共通仕様」を正とする。
+API のエラーボディ共通仕様（`{ error, message }` / 400・409 / 401・403 固定）は [openapi-notes.md](../api/openapi-notes.md) の「エラーレスポンス共通仕様」を正とする。
 
 **`isAxiosError(err)` とは**
 
@@ -413,5 +413,5 @@ VITE_KEYCLOAK_CLIENT_ID=front-client
 ## 関連ドキュメント
 
 - [frontend-keycloak-learning.md](./frontend-keycloak-learning.md) — F-01 認証
-- [openapi-notes.md](./openapi-notes.md) — API 契約
-- [frontend-gap-analysis.md](./frontend-gap-analysis.md) — 残タスク
+- [openapi-notes.md](../api/openapi-notes.md) — API 契約
+- [frontend-gap-analysis.md](../design/frontend-gap-analysis.md) — 残タスク

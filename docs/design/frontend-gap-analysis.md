@@ -1,6 +1,6 @@
 # フロントエンド差分リスト（確定設計との差分）
 
-Member B 向け。`LibraShare/frontend/` の**現状**と、確定設計（[screen-transition.md](./screen-transition.md)、[openapi-notes.md](./openapi-notes.md)、[README.md](../README.md)、[refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md)）の差分を一覧化したものです。
+Member B 向け。`LibraShare/frontend/` の**現状**と、確定設計（[screen-transition.md](./screen-transition.md)、[openapi-notes.md](../api/openapi-notes.md)、[README.md](../../README.md)、[refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md)）の差分を一覧化したものです。
 
 最終更新: 書誌/所蔵分離・checkout 一括貸出の設計確定後。
 
@@ -135,8 +135,8 @@ Member B 向け。`LibraShare/frontend/` の**現状**と、確定設計（[scre
 
 ## 関連ドキュメント
 
-- [README.md](../README.md)
+- [README.md](../../README.md)
 - [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md)
 - [screen-transition.md](./screen-transition.md)
-- [openapi-notes.md](./openapi-notes.md)
-- [frontend-keycloak-learning.md](./frontend-keycloak-learning.md)
+- [openapi-notes.md](../api/openapi-notes.md)
+- [frontend-keycloak-learning.md](../learning/frontend-keycloak-learning.md)

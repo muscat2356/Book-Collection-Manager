@@ -6,4 +6,4 @@
 
 - [../AGENTS.md](../AGENTS.md) — プロジェクト共通ガイド
 - [../.cursor/rules/](../.cursor/rules/) — Cursor ルール（`libra-share-frontend.mdc` 等）
-- [../docs/frontend-gap-analysis.md](../docs/frontend-gap-analysis.md) — 現状との差分リスト
+- [../docs/design/frontend-gap-analysis.md](../docs/design/frontend-gap-analysis.md) — 現状との差分リスト

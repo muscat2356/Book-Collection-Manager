@@ -66,7 +66,7 @@ MVP-A の実装・マージは一通り完了。書誌/所蔵分離・checkout �
 
 #### F-04 貸出フロー（MVP-A）
 
-一般社員以上のユーザーが `/loans/checkout` で利用者と所蔵を選び「貸出」すると、次の処理を行う。詳細は [docs/refactor-holdings-and-checkout.md](docs/refactor-holdings-and-checkout.md)。
+一般社員以上のユーザーが `/loans/checkout` で利用者と所蔵を選び「貸出」すると、次の処理を行う。詳細は [docs/design/refactor-holdings-and-checkout.md](docs/design/refactor-holdings-and-checkout.md)。
 
 1. React SPA が `POST /api/loans`（body: `{ userId, bookCopyIds }`）を呼び出す
 2. API が利用者と各所蔵（`book_copies`）の存在・`AVAILABLE` を確認する（行ロック）
@@ -99,7 +99,7 @@ MVP-A の実装・マージは一通り完了。書誌/所蔵分離・checkout �
 - REST コメント・書籍ディスカッション
 - 一般ユーザー自身が操作するマイページ / マイ貸出
 - 延滞罰金、外部書籍 API、決済、モバイルアプリ
-- バッチ処理（延滞ステータス更新・通知）— [将来検討](docs/future-considerations.md)
+- バッチ処理（延滞ステータス更新・通知）— [将来検討](docs/future/future-considerations.md)
 
 ### 時間不足時の削る順番
 
@@ -174,7 +174,7 @@ MVP-A の実装・マージは一通り完了。書誌/所蔵分離・checkout �
 ├── frontend/         # React SPA
 ├── docker/           # Keycloak realm 設定など
 ├── docker-compose.yml
-├── docs/             # ER 図, OpenAPI, 画面設計
+├── docs/             # 設計ドキュメント（[索引](docs/README.md): design / database / api / refactoring 等）
 └── README.md
 ```
 
@@ -184,12 +184,13 @@ MVP-A の実装・マージは一通り完了。書誌/所蔵分離・checkout �
 
 | テーブル | カラム |
 |----------|--------|
-| `books` | id, title, author, isbn, deleted, created_at |
+| `books` | id, title, author, isbn, publisher, category_small_id, deleted, created_at |
+| `category_large` / `category_medium` / `category_small` | 大中小カテゴリ（書誌は小のみ紐付け） |
 | `book_copies` | id, book_id, status（AVAILABLE / LOANED）, deleted |
 | `users` | id, keycloak_sub, display_name, email, is_active, updated_at |
 | `loans` | id, book_copy_id, user_id, borrowed_at, returned_at, status（BORROWED / RETURNED） |
 
-`users` は貸出対象の利用者（`general_user`）のみを保持する参照テーブルで、認証・ロール管理の正は Keycloak とする。社員・管理社員は `users` に登録せず、Keycloak 管理コンソールで管理する。ロールは Keycloak（JWT）で判定するため `users` に `role` カラムは持たない。`books` は書誌、`book_copies` は所蔵 1 冊である。貸出可能冊数は `stock_count` カラムではなく所蔵の集計で表す。`loans` は所蔵（`book_copy_id`）と利用者を紐づける。ER の詳細は [docs/er-diagram.md](docs/er-diagram.md)。
+`users` は貸出対象の利用者（`general_user`）のみを保持する参照テーブルで、認証・ロール管理の正は Keycloak とする。社員・管理社員は `users` に登録せず、Keycloak 管理コンソールで管理する。ロールは Keycloak（JWT）で判定するため `users` に `role` カラムは持たない。`books` は書誌、`book_copies` は所蔵 1 冊である。`books.publisher` は必須。カテゴリは大→中→小で、書誌は `category_small_id` のみ（任意）。貸出可能冊数は `stock_count` カラムではなく所蔵の集計で表す。`loans` は所蔵（`book_copy_id`）と利用者を紐づける。**同一書誌は同一利用者につき同時に 1 冊まで**。ER の詳細は [docs/database/er-diagram.md](docs/database/er-diagram.md)。シード例は [docs/database/sql/seed-publisher-categories.sql](docs/database/sql/seed-publisher-categories.sql)。
 
 書誌削除は **論理削除**（`books.deleted=true`）とする。貸出中の未削除所蔵（`LOANED`）がある書誌は削除不可（`409`）。所蔵削除も **論理削除**（`book_copies.deleted=true`）とする。`status=LOANED` の所蔵は削除不可（`409`）。`AVAILABLE` なら過去の貸出履歴があっても論理削除可。集計・holdings・貸出対象は `deleted=false` のみ。利用者削除は **論理削除**（`users.is_active=false`）＋ Keycloak 無効化とする。利用者一覧の通常表示は `is_active=true` のみ、書誌一覧の通常表示は `deleted=false` のみとする。貸出中の利用者は削除不可（`409`）。
 
@@ -204,16 +205,17 @@ MVP-A の実装・マージは一通り完了。書誌/所蔵分離・checkout �
 | POST | `/api/books/{id}/copies` | 所蔵 1 冊追加（編集画面） | 管理社員のみ |
 | DELETE | `/api/books/{id}/copies/{copyId}` | 所蔵 1 冊論理削除（AVAILABLE のみ。LOANED は 409。編集画面） | 管理社員のみ |
 | DELETE | `/api/books/{id}` | 書誌削除（論理削除。貸出中所蔵があれば 409） | 管理社員のみ |
+| GET | `/api/categories/tree` | 大中小カテゴリツリー | 一般社員・管理社員 |
 | GET | `/api/users` | 利用者一覧（`general_user` のみ） | 一般社員・管理社員 |
 | GET | `/api/users/{id}` | 利用者詳細 | 一般社員・管理社員 |
 | POST | `/api/users` | 利用者登録（氏名・メールのみ。初回パスワードは API 生成 + Keycloak temporary。ロールは `general_user` 固定） | 一般社員・管理社員 |
 | PUT | `/api/users/{id}` | 利用者更新（Keycloak + アプリ DB） | 一般社員・管理社員 |
 | DELETE | `/api/users/{id}` | 利用者削除（論理削除 + Keycloak 無効化。貸出中は削除不可） | 一般社員・管理社員 |
-| POST | `/api/loans` | 一括貸出（body: `{ userId, bookCopyIds }`） | 一般社員・管理社員 |
+| POST | `/api/loans` | 一括貸出（body: `{ userId, bookCopyIds }`。同一書誌は一人一冊まで） | 一般社員・管理社員 |
 | PUT | `/api/loans/{id}/return` | 返却 | 一般社員・管理社員 |
 | GET | `/api/loans/active` | 貸出中一覧（ユーザー・書誌・bookCopyId つき） | 一般社員・管理社員 |
 
-ページング API の詳細は [docs/openapi-notes.md](docs/openapi-notes.md) を参照。
+ページング API の詳細は [docs/api/openapi-notes.md](docs/api/openapi-notes.md) を参照。
 
 ---
 

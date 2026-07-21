@@ -35,6 +35,6 @@ SPA ルート: `/books`, `/books/:id`, `/books/new`, `/books/:id/edit`,
 
 ## 参照
 
-- `docs/screen-transition.md` — 画面遷移
-- `docs/openapi-notes.md` — API 契約
-- `docs/frontend-gap-analysis.md` — 現状との差分
+- `docs/design/screen-transition.md` — 画面遷移
+- `docs/api/openapi-notes.md` — API 契約
+- `docs/design/frontend-gap-analysis.md` — 現状との差分

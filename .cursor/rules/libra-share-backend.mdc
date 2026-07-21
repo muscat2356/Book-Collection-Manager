@@ -48,7 +48,7 @@ backend/src/main/resources/
 ## Member A と「実装」依頼
 
 - 実装は本人が手で行う。Agent は差分整理・設計確認・デバッグ支援を優先し、大規模な一括生成は避ける
-- 依頼時は機能 ID（F-02 / F-04 等）または `docs/refactor-holdings-and-checkout.md` / `docs/openapi-notes.md` を参照する
+- 依頼時は機能 ID（F-02 / F-04 等）または `docs/design/refactor-holdings-and-checkout.md` / `docs/api/openapi-notes.md` を参照する
 
 ### 「実装」と送られた場合の進め方
 
@@ -62,8 +62,8 @@ backend/src/main/resources/
 
 ## 参照
 
-- `docs/refactor-holdings-and-checkout.md` — 書誌/所蔵・一括貸出（確定）
-- `docs/openapi-notes.md` — API 契約
-- `docs/er-diagram.md` — DB
-- `docs/sequence-diagram.md` — フロー
+- `docs/design/refactor-holdings-and-checkout.md` — 書誌/所蔵・一括貸出（確定）
+- `docs/api/openapi-notes.md` — API 契約
+- `docs/database/er-diagram.md` — DB
+- `docs/design/sequence-diagram.md` — フロー
 - `README.md` — スコープ・機能 ID

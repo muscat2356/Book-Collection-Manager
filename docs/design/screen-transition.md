@@ -153,8 +153,8 @@ flowchart TD
 
 ## 関連ドキュメント
 
-- [README.md](../README.md) — 機能一覧、ロール、API エンドポイント
+- [README.md](../../README.md) — 機能一覧、ロール、API エンドポイント
 - [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md) — 書誌/所蔵・checkout 確定設計
-- [openapi-notes.md](./openapi-notes.md) — API 補足メモ
+- [openapi-notes.md](../api/openapi-notes.md) — API 補足メモ
 - [sequence-diagram.md](./sequence-diagram.md) — 全体シーケンス図
-- [er-diagram.md](./er-diagram.md) — ER 図
+- [er-diagram.md](../database/er-diagram.md) — ER 図

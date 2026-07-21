@@ -64,7 +64,8 @@ MVP-A ではフィールド単位のエラー配列は返さない。入力バ�
 |-------|------|------|
 | `VALIDATION_ERROR` | 400 | 入力バリデーション失敗 |
 | `USER_HAS_ACTIVE_LOANS` | 409 | 利用者削除時に貸出中あり（変更なし） |
-| `INSUFFICIENT_STOCK` | 409 | 貸出時に在庫不足 |
+| `COPY_NOT_AVAILABLE` | 409 | 貸出時に所蔵が AVAILABLE でない |
+| `BOOK_ALREADY_LOANED_BY_USER` | 409 | 同一書誌を同一利用者が既に借りている、またはリクエスト内で同一書誌を複数選択 |
 | `LOAN_ALREADY_RETURNED` | 409 | 返却済み貸出の再返却 等 |
 
 ---
@@ -83,7 +84,7 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 - バックエンドが初回パスワードを生成し、Keycloak Admin API でユーザー作成時に設定する
 - Keycloak のパスワードは **temporary フラグをオン** にする（初回ログイン時に変更を要求する想定）
 - 生成したパスワードは API レスポンス・画面には載せない
-- 利用者本人への初回パスワード通知は **MVP-A 対象外**。`general_user` のログイン実装時に検討する（[future-considerations.md](./future-considerations.md)）
+- 利用者本人への初回パスワード通知は **MVP-A 対象外**。`general_user` のログイン実装時に検討する（[future-considerations.md](../future/future-considerations.md)）
 
 ### GET /api/users
 
@@ -197,7 +198,7 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 
 ## 書誌 API（F-02 / F-02a / F-02b / F-02c）
 
-`books` は書誌（種類）、`book_copies` は所蔵（1 冊）です。在庫数は `stockCount` ではなく所蔵の集計（`totalCount` / `availableCount`）で表します。詳細は [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md) を参照。
+`books` は書誌（種類）、`book_copies` は所蔵（1 冊）です。在庫数は `stockCount` ではなく所蔵の集計（`totalCount` / `availableCount`）で表します。詳細は [refactor-holdings-and-checkout.md](../design/refactor-holdings-and-checkout.md) を参照。
 
 一覧・詳細の通常取得は `deleted=false` の書誌のみを対象とする。
 
@@ -213,8 +214,10 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
     "title": "リーダブルコード",
     "author": "Boswell",
     "isbn": "978-4-87311-565-8",
+    "publisher": "オライリー・ジャパン",
     "totalCount": 3,
-    "availableCount": 2
+    "availableCount": 2,
+    "category": null
   }
 ]
 ```
@@ -230,13 +233,22 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
   "title": "リーダブルコード",
   "author": "Boswell",
   "isbn": "978-4-87311-565-8",
+  "publisher": "オライリー・ジャパン",
   "totalCount": 3,
   "availableCount": 2,
   "holdings": [
     { "id": 12, "status": "AVAILABLE" },
     { "id": 14, "status": "LOANED" },
     { "id": 15, "status": "AVAILABLE" }
-  ]
+  ],
+  "category": {
+    "smallId": 100,
+    "smallName": "Java",
+    "mediumId": 10,
+    "mediumName": "プログラミング",
+    "largeId": 1,
+    "largeName": "技術"
+  }
 }
 ```
 
@@ -244,7 +256,7 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 
 **権限**: `admin_employee`
 
-`initialCopyCount` 件の `AVAILABLE` 所蔵を同時に作成する。
+`initialCopyCount` 件の `AVAILABLE` 所蔵を同時に作成する。`publisher` は必須。`categorySmallId` は任意（小カテゴリのみ）。
 
 ```json
 // Request
@@ -252,6 +264,8 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
   "title": "リーダブルコード",
   "author": "Boswell",
   "isbn": "978-4-87311-565-8",
+  "publisher": "オライリー・ジャパン",
+  "categorySmallId": 100,
   "initialCopyCount": 3
 }
 
@@ -261,13 +275,22 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
   "title": "リーダブルコード",
   "author": "Boswell",
   "isbn": "978-4-87311-565-8",
+  "publisher": "オライリー・ジャパン",
   "totalCount": 3,
   "availableCount": 3,
   "holdings": [
     { "id": 12, "status": "AVAILABLE" },
     { "id": 13, "status": "AVAILABLE" },
     { "id": 14, "status": "AVAILABLE" }
-  ]
+  ],
+  "category": {
+    "smallId": 100,
+    "smallName": "Java",
+    "mediumId": 10,
+    "mediumName": "プログラミング",
+    "largeId": 1,
+    "largeName": "技術"
+  }
 }
 ```
 
@@ -275,14 +298,16 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
 
 **権限**: `admin_employee`
 
-書誌情報のみ更新する。冊数は受け付けない（所蔵の追加は次節）。
+書誌情報のみ更新する。冊数は受け付けない（所蔵の追加は次節）。`publisher` は必須。
 
 ```json
 // Request
 {
   "title": "リーダブルコード 改訂版",
   "author": "Boswell",
-  "isbn": "978-4-87311-565-8"
+  "isbn": "978-4-87311-565-8",
+  "publisher": "オライリー・ジャパン",
+  "categorySmallId": 100
 }
 
 // Response 200
@@ -291,13 +316,22 @@ Keycloak Admin API と連携して Keycloak 側に利用者を作成/更新し�
   "title": "リーダブルコード 改訂版",
   "author": "Boswell",
   "isbn": "978-4-87311-565-8",
+  "publisher": "オライリー・ジャパン",
   "totalCount": 3,
   "availableCount": 2,
   "holdings": [
     { "id": 12, "status": "AVAILABLE" },
     { "id": 14, "status": "LOANED" },
     { "id": 15, "status": "AVAILABLE" }
-  ]
+  ],
+  "category": {
+    "smallId": 100,
+    "smallName": "Java",
+    "mediumId": 10,
+    "mediumName": "プログラミング",
+    "largeId": 1,
+    "largeName": "技術"
+  }
 }
 ```
 
@@ -453,7 +487,7 @@ GET /api/books?q=react&page=0&size=20
 
 ## 貸出 API（F-04 / F-05）
 
-MVP-A で実装。貸出入口は SPA の `/loans/checkout`。詳細は [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md)。
+MVP-A で実装。貸出入口は SPA の `/loans/checkout`。詳細は [refactor-holdings-and-checkout.md](../design/refactor-holdings-and-checkout.md)。
 
 **権限**: `general_employee` / `admin_employee`
 
@@ -461,11 +495,13 @@ MVP-A で実装。貸出入口は SPA の `/loans/checkout`。詳細は [refacto
 
 複数所蔵を 1 リクエストで一括貸出する（全件成功 / 全件ロールバック）。
 
+**同一書誌は一人一冊まで**: 同一 `books.id` について、同一利用者は同時に 1 冊まで。リクエスト内で同一書誌の所蔵を複数選ぶことも不可。異なる書誌の同時貸出は可。
+
 ```json
 // Request
 {
   "userId": 10,
-  "bookCopyIds": [12, 15]
+  "bookCopyIds": [12, 25]
 }
 
 // Response 201
@@ -483,9 +519,9 @@ MVP-A で実装。貸出入口は SPA の `/loans/checkout`。詳細は [refacto
     },
     {
       "id": 43,
-      "bookCopyId": 15,
-      "bookId": 1,
-      "bookTitle": "リーダブルコード",
+      "bookCopyId": 25,
+      "bookId": 2,
+      "bookTitle": "達人プログラマー",
       "userId": 10,
       "borrowedAt": "2026-06-30T10:00:00Z",
       "returnedAt": null,
@@ -494,11 +530,17 @@ MVP-A で実装。貸出入口は SPA の `/loans/checkout`。詳細は [refacto
   ]
 }
 
-// Response 409
+// Response 409（所蔵不可）
 {
   "error": "COPY_NOT_AVAILABLE",
   "message": "貸出できない所蔵が含まれています",
   "failedBookCopyIds": [15]
+}
+
+// Response 409（同一書誌の重複）
+{
+  "error": "BOOK_ALREADY_LOANED_BY_USER",
+  "message": "同じ書誌は一人一冊までです"
 }
 ```
 
@@ -506,10 +548,36 @@ MVP-A で実装。貸出入口は SPA の `/loans/checkout`。詳細は [refacto
 
 1. 利用者の存在・有効を確認する
 2. 各 `bookCopyId` を行ロックし `AVAILABLE` であることを確認する
-3. 1 件でも不可なら 409 で全体ロールバック
-4. 各 copy を `LOANED`、`loans` を `BORROWED` で作成する
+3. リクエスト内の所蔵がすべて異なる書誌であること、および当該利用者が同一書誌を既に `BORROWED` で借りていないことを確認する
+4. 1 件でも不可なら 409 で全体ロールバック
+5. 各 copy を `LOANED`、`loans` を `BORROWED` で作成する
 
 サーバによる自動割当は行わない。クライアントが指定した `bookCopyIds` のみを検証する。
+
+### GET /api/categories/tree
+
+**権限**: `general_employee` / `admin_employee`
+
+大→中→小のネスト一覧。書誌の紐付けは小のみ。シード例は [sql/seed-publisher-categories.sql](../database/sql/seed-publisher-categories.sql)。
+
+```json
+[
+  {
+    "id": 1,
+    "name": "技術",
+    "children": [
+      {
+        "id": 10,
+        "name": "プログラミング",
+        "children": [
+          { "id": 100, "name": "Java" },
+          { "id": 101, "name": "TypeScript" }
+        ]
+      }
+    ]
+  }
+]
+```
 
 ### PUT /api/loans/{id}/return
 
@@ -561,8 +629,8 @@ MVP-A で実装。貸出入口は SPA の `/loans/checkout`。詳細は [refacto
 
 ## 関連ドキュメント
 
-- [README](../README.md) — 3 ロール、利用者管理、F-02a/b/c、F-04、F-05、F-06、F-11 の機能定義
-- [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md) — 書誌/所蔵・一括貸出の確定設計
-- [er-diagram.md](./er-diagram.md) — DB（書誌 `deleted` / 所蔵 / 利用者 `is_active`）
-- [front-api-learning.md](./front-api-learning.md) — フロントの `toErrorMessage` 契約
-- [future-considerations.md](./future-considerations.md) — バッチ・延滞などの将来案
+- [README](../../README.md) — 3 ロール、利用者管理、F-02a/b/c、F-04、F-05、F-06、F-11 の機能定義
+- [refactor-holdings-and-checkout.md](../design/refactor-holdings-and-checkout.md) — 書誌/所蔵・一括貸出の確定設計
+- [er-diagram.md](../database/er-diagram.md) — DB（書誌 `deleted` / 所蔵 / 利用者 `is_active`）
+- [front-api-learning.md](../learning/front-api-learning.md) — フロントの `toErrorMessage` 契約
+- [future-considerations.md](../future/future-considerations.md) — バッチ・延滞などの将来案

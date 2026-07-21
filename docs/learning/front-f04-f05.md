@@ -2,7 +2,7 @@
 
 フロントの checkout 一括貸出（F-04）と貸出中一覧・返却（F-05）について、実装中に出た疑問を中心に、**関数・引数・変数を日本語で言い換え**、あわせて **データの流れ（受け取り → 変換 → 渡し先）** を書いたメモ。
 
-設計の正: [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md) / [openapi-notes.md](./openapi-notes.md)
+設計の正: [refactor-holdings-and-checkout.md](../design/refactor-holdings-and-checkout.md) / [openapi-notes.md](../api/openapi-notes.md)
 
 ---
 

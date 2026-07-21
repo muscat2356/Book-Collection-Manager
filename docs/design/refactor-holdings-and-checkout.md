@@ -5,7 +5,7 @@
 | **対象** | **Member A**（DB / API / Security 境界）と **Member B**（SPA / 画面 / API クライアント）の双方 |
 | **ステータス** | **確定**（2026-07-15）。設計 docs へ反映済み。実装は Member A / B が各自で行う |
 | **目的** | [refact-plane.md](./refact-plane.md) を出発点に、現行設計の核を崩さず書誌・所蔵分離と一括貸出へ移行する合意文書 |
-| **設計の正（併読）** | [er-diagram.md](./er-diagram.md) / [openapi-notes.md](./openapi-notes.md) / [screen-transition.md](./screen-transition.md) / [sequence-diagram.md](./sequence-diagram.md) / [README.md](../README.md) / [frontend-gap-analysis.md](./frontend-gap-analysis.md) |
+| **設計の正（併読）** | [er-diagram.md](../database/er-diagram.md) / [openapi-notes.md](../api/openapi-notes.md) / [screen-transition.md](./screen-transition.md) / [sequence-diagram.md](./sequence-diagram.md) / [README.md](../../README.md) / [frontend-gap-analysis.md](./frontend-gap-analysis.md) |
 
 **読み方**
 
@@ -105,7 +105,7 @@ erDiagram
 
 合意後に各ファイルを更新する。
 
-### 4.1 [er-diagram.md](./er-diagram.md)
+### 4.1 [er-diagram.md](../database/er-diagram.md)
 
 | 項目 | 現行 | 変更後 |
 |------|------|--------|
@@ -115,7 +115,7 @@ erDiagram
 | 所蔵 status | なし | `AVAILABLE` / `LOANED` |
 | `due_at` | 対象外 | 引き続き対象外 |
 
-### 4.2 [openapi-notes.md](./openapi-notes.md)
+### 4.2 [openapi-notes.md](../api/openapi-notes.md)
 
 → **「6. API 契約」の JSON 差分が正の詳細**。要約のみ下記。
 
@@ -146,14 +146,14 @@ erDiagram
 | 貸出 | 単件・stock 減算 | 複数 copy・同一 TX |
 | 返却 | stock 加算 | copy → `AVAILABLE` |
 
-### 4.5 [README.md](../README.md)
+### 4.5 [README.md](../../README.md)
 
 | 項目 | 現行 | 変更後 |
 |------|------|--------|
 | F-04 | 詳細 1 冊・`bookId` | checkout 一括・`bookCopyIds` |
 | DB | `stock_count` | 書誌 / 所蔵分離 |
 
-### 4.6 [future-considerations.md](./future-considerations.md)
+### 4.6 [future-considerations.md](../future/future-considerations.md)
 
 | 項目 | 現行 | 変更後 |
 |------|------|--------|
@@ -617,7 +617,7 @@ export type Book = {
 ```json
 {
   "userId": 10,
-  "bookCopyIds": [12, 15]
+  "bookCopyIds": [12, 25]
 }
 ```
 
@@ -638,9 +638,9 @@ export type Book = {
     },
     {
       "id": 43,
-      "bookCopyId": 15,
-      "bookId": 1,
-      "bookTitle": "リーダブルコード",
+      "bookCopyId": 25,
+      "bookId": 2,
+      "bookTitle": "達人プログラマー",
       "userId": 10,
       "borrowedAt": "2026-06-30T10:00:00Z",
       "returnedAt": null,
@@ -652,6 +652,13 @@ export type Book = {
 
 （`bookId` / `bookTitle` はレスポンス便宜上の付帯。永続 FK の正は `bookCopyId`。）
 
+**同一書誌は一人一冊まで**
+
+- リクエスト内で同一 `bookId` の所蔵を複数含めない
+- 当該利用者が既に同一書誌を `BORROWED` で借りている場合も不可
+- 異なる書誌の同時貸出は可
+- 違反時は `409` `BOOK_ALREADY_LOANED_BY_USER`
+
 **変更後 Response 409 例**
 
 ```json
@@ -659,6 +666,13 @@ export type Book = {
   "error": "COPY_NOT_AVAILABLE",
   "message": "貸出できない所蔵が含まれています",
   "failedBookCopyIds": [15]
+}
+```
+
+```json
+{
+  "error": "BOOK_ALREADY_LOANED_BY_USER",
+  "message": "同じ書誌は一人一冊までです"
 }
 ```
 

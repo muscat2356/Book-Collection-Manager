@@ -17,13 +17,13 @@ alwaysApply: true
 
 - MVP-A のみがコミットライン。MVP-B（F-03/F-11/F-10）は余力時。
 - `/loans/me` は廃止。貸出中一覧は `/loans/active`。貸出入口は `/loans/checkout`（通常の書誌詳細から貸出しない）。
-- 書誌 `books` と所蔵 `book_copies` を分離。貸出は `{ userId, bookCopyIds }`。詳細は `docs/refactor-holdings-and-checkout.md`。
+- 書誌 `books` と所蔵 `book_copies` を分離。貸出は `{ userId, bookCopyIds }`。詳細は `docs/design/refactor-holdings-and-checkout.md`。
 - 利用者管理の対象は `general_user` のみ。社員は Keycloak コンソール管理。
 
 ## Member A（バック）依頼時
 
 - 実装は本人が手で行う。Agent は差分整理・設計確認・デバッグ支援を優先し、大規模な下書き生成は避ける。
-- 機能 ID（F-02 / F-04 等）または `docs/refactor-holdings-and-checkout.md` / `docs/openapi-notes.md` / `docs/er-diagram.md` を参照して依頼する。
+- 機能 ID（F-02 / F-04 等）または `docs/design/refactor-holdings-and-checkout.md` / `docs/api/openapi-notes.md` / `docs/database/er-diagram.md` を参照して依頼する。
 - 旧単件貸出（`bookId` + `stock_count` 加減算）は実装しない。所蔵分離後の契約で進める。
 
 ### 「実装」と送られた場合の進め方（バック）
@@ -39,7 +39,7 @@ alwaysApply: true
 ## Member B（フロント）依頼時
 
 - 実装は本人が手で行う。Agent は差分整理・設計確認・デバッグ支援を優先し、大規模な下書き生成は避ける。
-- 機能 ID（F-01 等）または `docs/frontend-gap-analysis.md` を参照して依頼する。
+- 機能 ID（F-01 等）または `docs/design/frontend-gap-analysis.md` を参照して依頼する。
 
 ### 「実装」と送られた場合の進め方（フロント）
 

@@ -1,6 +1,6 @@
 # 所蔵論理削除 — バック / フロント変更箇所
 
-契約の正は更新済み docs（[er-diagram.md](./er-diagram.md) / [openapi-notes.md](./openapi-notes.md) / [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md) / [README.md](../README.md)）。  
+契約の正は更新済み docs（[er-diagram.md](../database/er-diagram.md) / [openapi-notes.md](../api/openapi-notes.md) / [refactor-holdings-and-checkout.md](../design/refactor-holdings-and-checkout.md) / [README.md](../../README.md)）。  
 本ファイルは **実装時の変更チェックリスト**（Member A = バック主、Member B = フロント確認）。
 
 ## 方針（再掲）
@@ -109,11 +109,11 @@
 
 既に更新済み。実装中に文言ずれがあれば再度揃える。
 
-- `docs/er-diagram.md`
-- `docs/openapi-notes.md`
-- `docs/refactor-holdings-and-checkout.md`
-- `docs/screen-transition.md`
-- `docs/sequence-diagram.md`
+- `docs/database/er-diagram.md`
+- `docs/api/openapi-notes.md`
+- `docs/design/refactor-holdings-and-checkout.md`
+- `docs/design/screen-transition.md`
+- `docs/design/sequence-diagram.md`
 - `README.md`
 
 ---

@@ -5,8 +5,8 @@ Member B（フロント）向け。LibraShare の Keycloak ログイン連携（
 設計の正は引き続き以下を参照してください。
 
 - [screen-transition.md](./screen-transition.md) — 認証と認可の分離
-- [sequence-diagram.md](./sequence-diagram.md) — OIDC フロー
-- [frontend-gap-analysis.md](./frontend-gap-analysis.md) — 残タスク一覧
+- [sequence-diagram.md](../design/sequence-diagram.md) — OIDC フロー
+- [frontend-gap-analysis.md](../design/frontend-gap-analysis.md) — 残タスク一覧
 
 ---
 
@@ -331,7 +331,7 @@ F-01 実装中に発生した質問と回答を、設計判断・実装・トラ
 
 **A:** ドキュメント間で不整合があった。
 
-- `docs/screen-transition.md` は当初 `/login` を SPA ルートとして記載
+- `docs/design/screen-transition.md` は当初 `/login` を SPA ルートとして記載
 - `README.md` は「ログイン画面」の存在は示すが `/login` パスは明示していなかった
 
 **採用した整理:**
@@ -340,7 +340,7 @@ F-01 実装中に発生した質問と回答を、設計判断・実装・トラ
 - SPA ルート一覧から `/login` を除外
 - 未ログイン時は `ProtectedRoute` が `keycloak.login()` を呼ぶ
 
-→ `docs/screen-transition.md` をこの方針で更新済み。
+→ `docs/design/screen-transition.md` をこの方針で更新済み。
 
 ---
 

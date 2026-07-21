@@ -93,7 +93,7 @@ GET /api/loans?page=0&size=20      # ページング
 
 ### ステータス（確定）
 
-**MVP-A の F-04 として採用済み。** 正の設計は [refactor-holdings-and-checkout.md](./refactor-holdings-and-checkout.md)。
+**MVP-A の F-04 として採用済み。** 正の設計は [refactor-holdings-and-checkout.md](../design/refactor-holdings-and-checkout.md)。
 
 | 項目 | 確定内容 |
 |------|----------|
@@ -101,6 +101,7 @@ GET /api/loans?page=0&size=20      # ページング
 | UI | `/loans/checkout`（利用者 → 書誌カード → 詳細で所蔵選択 → 確認）。`LoanProvider` で選択を保持 |
 | TX | 全件成功 / 全件ロールバック |
 | 在庫 | `books.stock_count` ではなく `book_copies.status` |
+| 制限 | **同一書誌は一人一冊まで**（リクエスト内重複・既存 BORROWED の両方） |
 
 ### なお将来候補として残すもの
 
@@ -112,6 +113,21 @@ GET /api/loans?page=0&size=20      # ページング
 
 ---
 
+## 大中小カテゴリ・出版社
+
+### ステータス（確定方針・docs 反映済み）
+
+| 項目 | 内容 |
+|------|------|
+| 出版社 | `books.publisher VARCHAR(255) NOT NULL` |
+| カテゴリ | `category_large` / `medium` / `small`。書誌は `category_small_id` のみ（NULL 可） |
+| API | `GET /api/categories/tree`。Book の request/response に `publisher` / `category` |
+| シード | [sql/seed-publisher-categories.sql](../database/sql/seed-publisher-categories.sql) |
+
+実装は Flyway 追加後に Backend / Frontend へ反映する。
+
+---
+
 ## その他の将来候補
 
 - `general_user` のログイン実装
@@ -120,10 +136,11 @@ GET /api/loans?page=0&size=20      # ページング
 - 外部書籍 API（ISBN から書誌情報取得）
 - プッシュ通知（返却リマインダー）
 - モバイルアプリ（React Native 等）
+- カテゴリ管理 CRUD 画面（初期は seed マスタで可）
 
 ---
 
 ## 関連ドキュメント
 
-- [README](../README.md) — MVP-A/B のスコープ定義
-- [openapi-notes.md](./openapi-notes.md) — F-11 ページング API 草案
+- [README](../../README.md) — MVP-A/B のスコープ定義
+- [openapi-notes.md](../api/openapi-notes.md) — F-11 ページング API 草案
