@@ -7,9 +7,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.example.librashare.domain.CopyStatus;
+import com.example.librashare.domain.Loan;
+import com.example.librashare.domain.LoanStatus;
 import com.example.librashare.domain.User;
 import com.example.librashare.exception.exception.BusinessException;
 import com.example.librashare.keycloak.KeycloakUserService;
+import com.example.librashare.repository.LoanRepository;
 import com.example.librashare.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -29,10 +33,15 @@ public class UserService {
 
     private final KeycloakUserService keycloakUserService;
     private final UserRepository userRepository;
+    private final LoanRepository loanRepository;
 
-    public UserService(KeycloakUserService keycloakUserService, UserRepository userRepository) {
+    
+
+    public UserService(KeycloakUserService keycloakUserService, UserRepository userRepository,
+            LoanRepository loanRepository) {
         this.keycloakUserService = keycloakUserService;
         this.userRepository = userRepository;
+        this.loanRepository = loanRepository;
     }
 
     /**
@@ -119,6 +128,19 @@ public class UserService {
         }
 
         User user = optinalUser.get();
+
+
+        List<Loan> loanList = loanRepository.findByUserId(user.getId());
+
+        boolean hasLoaded = loanList.stream()
+                            .anyMatch(l -> l.getStatus() == LoanStatus.BORROWED);
+
+        if(hasLoaded){
+            logger.warn("書籍を貸出中のためユーザーを削除できません id={}", id);
+            throw new BusinessException(
+                    "USER_HAS_ACTIVE_LOANS", 
+                    "書籍を貸出中のため、ユーザー削除ができません。");
+        }
 
         user.setActive(false);
 

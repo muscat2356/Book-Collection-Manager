@@ -24,4 +24,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long>{
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT l FROM Loan l JOIN FETCH l.bookCopy WHERE l.id = :id")
     Optional<Loan> findByIdForUpdate(@Param("id") Long id);
+
+    //該当ユーザーIDに紐づいた貸出リストを検索
+    List<Loan> findByUserId(Long id);
 }
