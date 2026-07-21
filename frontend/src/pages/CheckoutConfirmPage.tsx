@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Link, Navigate, useNavigate } from "react-router-dom"
 import { useApiClient } from "../api/ApiClientContext"
 import { createLoan, LoanError } from "../api/loans"
@@ -8,6 +8,7 @@ export function CheckoutConfirmPage() {
   const apiClient = useApiClient()
   const navigate = useNavigate()
   const { user, selectedBookCopies, removeCopy, clearAll } = useLoanCheckout()
+  const submittingRef = useRef(false);
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -22,6 +23,8 @@ export function CheckoutConfirmPage() {
 
   async function handleSubmit() {
     if (!user || selectedBookCopies.length === 0) return
+    if (submittingRef.current) return
+    submittingRef.current = true
     setSubmitting(true)
     setError(null)
     try {
@@ -38,6 +41,7 @@ export function CheckoutConfirmPage() {
       }
       setError(e instanceof Error ? e.message : "貸出に失敗しました")
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
   }
