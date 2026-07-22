@@ -122,10 +122,11 @@ public class BookService {
                 book.setIsbn(request.getIsbn());
                 book.setPublisher(request.getPublisher());
             
-            //nullチェック
+            //nullじゃない場合に取得検索を実施
             if (request.getCategorySmallId() != null) {
                 //IDを持つエンティティの参照を返す
-                CategorySmall categorySmall = categorySmallRepository.getReferenceById(request.getCategorySmallId());
+                CategorySmall categorySmall = categorySmallRepository.findById(request.getCategorySmallId())
+                                                    .orElseThrow(() -> new BusinessException("CATEGORY_NOT_FOUND", "指定されたカテゴリーは存在しません"));
                 book.setCategorySmall(categorySmall);
             }
 
@@ -175,10 +176,14 @@ public class BookService {
      */
     private CategoryResponse toCategoryResponse(CategorySmall categorySmall){
 
-        CategoryMedium categoryMedium = categorySmall.getCategoryMedium();
+        if (categorySmall == null) {
+            return null;
+        }else{
+            CategoryMedium categoryMedium = categorySmall.getCategoryMedium();
         CategoryLarge categoryLarge = categoryMedium.getCategoryLarge();
 
         return new CategoryResponse(categorySmall.getId(), categorySmall.getName(), categoryMedium.getId(), categoryMedium.getName(), categoryLarge.getId(), categoryLarge.getName());
+        }
     }
 
 

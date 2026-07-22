@@ -24,14 +24,14 @@ import com.example.librashare.controller.BookController;
         private int availableCount;
         private List<HoldingResponse> holdings;
         //追加フィールド変数
-        private CategoryResponse categoryResponse;
+        private CategoryResponse category;
 
         
         public BookResponse() {
         }
 
         public BookResponse(Long id, String title, String author, String isbn, String publisher, int totalCount,
-                int availableCount, List<HoldingResponse> holdings, CategoryResponse categoryResponse) {
+                int availableCount, List<HoldingResponse> holdings, CategoryResponse category) {
             this.id = id;
             this.title = title;
             this.author = author;
@@ -40,7 +40,7 @@ import com.example.librashare.controller.BookController;
             this.totalCount = totalCount;
             this.availableCount = availableCount;
             this.holdings = holdings;
-            this.categoryResponse = categoryResponse;
+            this.category = category;
         }
 
         public Long getId() {
@@ -86,12 +86,12 @@ import com.example.librashare.controller.BookController;
             this.holdings = holdings;
         }
 
-        public CategoryResponse getCategoryResponse() {
-            return categoryResponse;
+        public CategoryResponse getCategory() {
+            return category;
         }
 
-        public void setCategoryResponse(CategoryResponse categoryResponse) {
-            this.categoryResponse = categoryResponse;
+        public void setCategory(CategoryResponse category) {
+            this.category = category;
         }
 
         public String getPublisher() {
