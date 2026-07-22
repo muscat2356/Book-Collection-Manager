@@ -2,20 +2,27 @@ package com.example.librashare.domain;
 
 import java.time.OffsetDateTime;
 
+import com.example.librashare.controller.BookController;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 /**
  * 書籍のdomainクラス
  * booksテーブルとの連携
+ * 
+ * publisher/categrySmallIdの追記
+ * ┗仕様変更のため
  * @author furuyama
  * @since 2026-07-08
- * @see 
- * BookController
+ * @see BookController
  */
 
 @Entity
@@ -36,6 +43,15 @@ public class Book {
     @Column(length = 32)
     private String isbn;
 
+    @Column(nullable = false, length = 255)
+    private String publisher;
+
+    //カテゴリーのidを取得
+    //遅延読み込みの指定-> getCategorySmall() などでアクセスした瞬間にSQLが発行されて取得
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_small_id")
+    private CategorySmall categorySmall;
+
     //作成日時
     //default.nowで設定されているため、insertとupdateの際にはnullが入力される
     //そのためinsertとupdateを実施にデータを取得する際に、findを実施の上、入力された状態で、
@@ -48,19 +64,19 @@ public class Book {
     public Book() {
     }
 
-    
-    public Book(Long id, String title, String author, String isbn, OffsetDateTime createdAt,
-			boolean deleted) {
-		this.id = id;
-		this.title = title;
-		this.author = author;
-		this.isbn = isbn;
-		this.createdAt = createdAt;
-		this.deleted = deleted;
-	}
+    public Book(Long id, String title, String author, String isbn, String publisher, CategorySmall categorySmall,
+            OffsetDateTime createdAt, boolean deleted) {
+        this.id = id;
+        this.title = title;
+        this.author = author;
+        this.isbn = isbn;
+        this.publisher = publisher;
+        this.categorySmall = categorySmall;
+        this.createdAt = createdAt;
+        this.deleted = deleted;
+    }
 
-
-	public Long getId() {
+    public Long getId() {
         return id;
     }
 
@@ -108,6 +124,22 @@ public class Book {
 		this.deleted = deleted;
 	}
 
-    
+
+    public String getPublisher() {
+        return publisher;
+    }
+
+
+    public void setPublisher(String publisher) {
+        this.publisher = publisher;
+    }
+
+    public CategorySmall getCategorySmall() {
+        return categorySmall;
+    }
+
+    public void setCategorySmall(CategorySmall categorySmall) {
+        this.categorySmall = categorySmall;
+    }
 
 }
