@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,15 +15,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.librashare.domain.Book;
 import com.example.librashare.domain.BookCopy;
+import com.example.librashare.dto.request.BookPutRequest;
 import com.example.librashare.dto.request.BookRequest;
 import com.example.librashare.dto.response.BookResponse;
 import com.example.librashare.dto.response.CopiesResponse;
 import com.example.librashare.service.BookService;
 
 import jakarta.validation.Valid;
-import jakarta.ws.rs.core.Response;
 
 /**
  * 書籍のCRUD機能を実装したRESTController
@@ -90,7 +88,7 @@ public class BookController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('admin_employee')")
-    public ResponseEntity<BookResponse> updateBook(@PathVariable Long id,@Valid @RequestBody BookRequest bookRequest){
+    public ResponseEntity<BookResponse> updateBook(@PathVariable Long id,@Valid @RequestBody BookPutRequest bookRequest){
         
         Optional <BookResponse> response = bookService.updateBook(id, bookRequest);
 

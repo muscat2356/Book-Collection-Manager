@@ -2,6 +2,8 @@ package com.example.librashare.dto.response;
 
 import java.util.List;
 
+import com.example.librashare.controller.BookController;
+
 /**
      * 書籍のレスポンス受け入れクラス
      * @author furuyama
@@ -16,25 +18,31 @@ import java.util.List;
         private String title;
         private String author;
         private String isbn;
+        //追加フィールド変数
+        private String publisher;
         private int totalCount;
         private int availableCount;
         private List<HoldingResponse> holdings;
+        //追加フィールド変数
+        private CategoryResponse category;
 
         
         public BookResponse() {
         }
-        
-        public BookResponse(Long id, String title, String author, String isbn,
-                            int totalCount, int availableCount,
-                            List<HoldingResponse> holdings) {
+
+        public BookResponse(Long id, String title, String author, String isbn, String publisher, int totalCount,
+                int availableCount, List<HoldingResponse> holdings, CategoryResponse category) {
             this.id = id;
             this.title = title;
             this.author = author;
             this.isbn = isbn;
+            this.publisher = publisher;
             this.totalCount = totalCount;
             this.availableCount = availableCount;
             this.holdings = holdings;
+            this.category = category;
         }
+
         public Long getId() {
             return id;
         }
@@ -78,5 +86,20 @@ import java.util.List;
             this.holdings = holdings;
         }
 
+        public CategoryResponse getCategory() {
+            return category;
+        }
+
+        public void setCategory(CategoryResponse category) {
+            this.category = category;
+        }
+
+        public String getPublisher() {
+            return publisher;
+        }
+
+        public void setPublisher(String publisher) {
+            this.publisher = publisher;
+        }
         
     }
