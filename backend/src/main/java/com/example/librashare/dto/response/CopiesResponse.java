@@ -2,6 +2,11 @@ package com.example.librashare.dto.response;
 
 import com.example.librashare.domain.CopyStatus;
 
+/**
+ * CopiesのResponseクラス
+ * @author ichikura
+ * @since 2026-07-15
+ */
 public class CopiesResponse {
 
     private Long id;
