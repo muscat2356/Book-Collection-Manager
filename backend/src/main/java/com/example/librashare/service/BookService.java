@@ -9,13 +9,19 @@ import org.springframework.stereotype.Service;
 
 import com.example.librashare.domain.Book;
 import com.example.librashare.domain.BookCopy;
+import com.example.librashare.domain.CategoryLarge;
+import com.example.librashare.domain.CategoryMedium;
+import com.example.librashare.domain.CategorySmall;
 import com.example.librashare.domain.CopyStatus;
+import com.example.librashare.dto.request.BookPutRequest;
 import com.example.librashare.dto.request.BookRequest;
 import com.example.librashare.dto.response.BookResponse;
+import com.example.librashare.dto.response.CategoryResponse;
 import com.example.librashare.dto.response.HoldingResponse;
 import com.example.librashare.exception.exception.BusinessException;
 import com.example.librashare.repository.BookCopyRepository;
 import com.example.librashare.repository.BookRepository;
+import com.example.librashare.repository.CategorySmallRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -33,10 +39,13 @@ public class BookService {
 
     private final BookRepository bookRepository;
     private final BookCopyRepository copyRepository;
+    private final CategorySmallRepository categorySmallRepository;
 
-    public BookService(BookRepository bookRepository, BookCopyRepository copyRepository) {
+    public BookService(BookRepository bookRepository, BookCopyRepository copyRepository,
+            CategorySmallRepository categorySmallRepository) {
         this.bookRepository = bookRepository;
         this.copyRepository = copyRepository;
+        this.categorySmallRepository = categorySmallRepository;
     }
 
     /**
@@ -73,6 +82,15 @@ public class BookService {
         book.setTitle(request.getTitle());
         book.setAuthor(request.getAuthor());
         book.setIsbn(request.getIsbn());
+        book.setPublisher(request.getPublisher());
+
+
+        if (request.getCategorySmallId() != null) {
+            //IDを持つエンティティの参照を返す
+            CategorySmall categorySmall = categorySmallRepository.getReferenceById(request.getCategorySmallId());
+            book.setCategorySmall(categorySmall);
+        }
+
         Book saved = bookRepository.save(book);
 
         // Optionlで包んで値を確認、nullの場合は0をセット
@@ -84,7 +102,7 @@ public class BookService {
 
         copyRepository.saveAll(newCopies);
 
-        return toResponse(saved, false);
+        return toResponse(saved, true);
 
 
     }
@@ -95,14 +113,24 @@ public class BookService {
      * @param request
      * @return　Optionalの中にresponseを入れてリターン
      */
-    public Optional<BookResponse> updateBook(Long id, BookRequest request) {
+    public Optional<BookResponse> updateBook(Long id, BookPutRequest request) {
         return bookRepository.findById(id)
             .filter(b -> !b.isDeleted())
             .map(book -> {
                 book.setTitle(request.getTitle());
                 book.setAuthor(request.getAuthor());
                 book.setIsbn(request.getIsbn());
-                return toResponse(book, false);
+                book.setPublisher(request.getPublisher());
+            
+            //nullチェック
+            if (request.getCategorySmallId() != null) {
+                //IDを持つエンティティの参照を返す
+                CategorySmall categorySmall = categorySmallRepository.getReferenceById(request.getCategorySmallId());
+                book.setCategorySmall(categorySmall);
+            }
+
+            //mapで生成したものをレスポンスにして返す
+            return toResponse(book, false);
             });
     }
 
@@ -133,10 +161,26 @@ public class BookService {
                 book.getTitle(), 
                 book.getAuthor(),
                 book.getIsbn(),
+                book.getPublisher(),
                 total,
                 availableCount,
-                holdings);
+                holdings,
+                toCategoryResponse(book.getCategorySmall()));
     }
+
+    /**
+     * CategoryResponseの生成クラス 
+     * @param categorySmall bookの変数より取得
+     * @return　categoryResponseをリターン
+     */
+    private CategoryResponse toCategoryResponse(CategorySmall categorySmall){
+
+        CategoryMedium categoryMedium = categorySmall.getCategoryMedium();
+        CategoryLarge categoryLarge = categoryMedium.getCategoryLarge();
+
+        return new CategoryResponse(categorySmall.getId(), categorySmall.getName(), categoryMedium.getId(), categoryMedium.getName(), categoryLarge.getId(), categoryLarge.getName());
+    }
+
 
     /**
      * 該当書籍の削除処理
@@ -165,7 +209,7 @@ public class BookService {
         //貸出をされている場合に削除できないように例外処理
         //業務衝突で409
         if(hasLoaded){
-            throw new BusinessException("COPY_NOT_DELETABLE", "貸出中、または貸出履歴がある所蔵のため削除できません");
+            throw new BusinessException("BOOK_HAS_LOANED_COPIES", "貸出中の所蔵があるため削除できません");
         }
 
         //bookの論理削除フラグを更新
