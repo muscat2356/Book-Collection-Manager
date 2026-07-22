@@ -2,6 +2,9 @@ package com.example.librashare.dto.request;
 
 import com.example.librashare.controller.BookController;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 /**
  * 書籍のリクエスト受け入れクラス
  * @author furuyama
@@ -12,11 +15,23 @@ import com.example.librashare.controller.BookController;
 
 public class BookRequest {
 
+    @NotBlank
+    @Size(max = 255)
     private String title;
+
+    @NotBlank
+    @Size(max = 255)
     private String author;
+
+    @Size(max = 32)
     private String isbn;
+
+    @NotBlank
+    @Size(max = 255)
     private String publisher;
+
     private Long categorySmallId;
+
     private Integer initialCopyCount;
 
     public BookRequest() {

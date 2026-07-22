@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.librashare.domain.Book;
 import com.example.librashare.domain.BookCopy;
@@ -24,7 +25,6 @@ import com.example.librashare.repository.BookRepository;
 import com.example.librashare.repository.CategorySmallRepository;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 
 /**
  * 書籍のCRUD機能を実装したService
@@ -87,8 +87,14 @@ public class BookService {
 
         if (request.getCategorySmallId() != null) {
             //IDを持つエンティティの参照を返す
-            CategorySmall categorySmall = categorySmallRepository.getReferenceById(request.getCategorySmallId());
+            CategorySmall categorySmall = categorySmallRepository.findById(request.getCategorySmallId())
+                                            .orElseThrow(() -> new BusinessException(
+                                                "CATEGORY_NOY_FOUND", 
+                                                "指定されたカテゴリーは存在しません"));
             book.setCategorySmall(categorySmall);
+
+        }else{
+            book.setCategorySmall(null);
         }
 
         Book saved = bookRepository.save(book);
@@ -113,6 +119,7 @@ public class BookService {
      * @param request
      * @return　Optionalの中にresponseを入れてリターン
      */
+    @Transactional
     public Optional<BookResponse> updateBook(Long id, BookPutRequest request) {
         return bookRepository.findById(id)
             .filter(b -> !b.isDeleted())
@@ -128,6 +135,8 @@ public class BookService {
                 CategorySmall categorySmall = categorySmallRepository.findById(request.getCategorySmallId())
                                                     .orElseThrow(() -> new BusinessException("CATEGORY_NOT_FOUND", "指定されたカテゴリーは存在しません"));
                 book.setCategorySmall(categorySmall);
+            }else{
+                book.setCategorySmall(null);
             }
 
             //mapで生成したものをレスポンスにして返す
@@ -180,9 +189,15 @@ public class BookService {
             return null;
         }else{
             CategoryMedium categoryMedium = categorySmall.getCategoryMedium();
-        CategoryLarge categoryLarge = categoryMedium.getCategoryLarge();
+            CategoryLarge categoryLarge = categoryMedium.getCategoryLarge();
 
-        return new CategoryResponse(categorySmall.getId(), categorySmall.getName(), categoryMedium.getId(), categoryMedium.getName(), categoryLarge.getId(), categoryLarge.getName());
+            return new CategoryResponse(
+                    categorySmall.getId(), 
+                    categorySmall.getName(), 
+                    categoryMedium.getId(), 
+                    categoryMedium.getName(), 
+                    categoryLarge.getId(), 
+                    categoryLarge.getName());
         }
     }
 
@@ -263,7 +278,7 @@ public class BookService {
         if(book.getStatus() == CopyStatus.LOANED){
             throw new BusinessException(
                     "COPY_NOT_DELETABLE", 
-                    "貸出中、または貸出履歴がある所蔵のため削除できません");
+                    "貸出中のため削除できません");
         }
 
         book.setDeleted(true);

@@ -2,6 +2,9 @@ package com.example.librashare.dto.request;
 
 import com.example.librashare.controller.BookController;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 /**
  * BookのPut用Requestクラス
  * initialCopyCountの変数が存在しないクラス（PUT用）
@@ -11,10 +14,21 @@ import com.example.librashare.controller.BookController;
  */
 public class BookPutRequest {
 
+    @NotBlank
+    @Size(max = 255)
     private String title;
+
+    @NotBlank
+    @Size(max = 255)
     private String author;
+
+    @Size(max = 32)
     private String isbn;
+
+    @NotBlank
+    @Size(max = 255)
     private String publisher;
+
     private Long categorySmallId;
     
     public BookPutRequest() {
