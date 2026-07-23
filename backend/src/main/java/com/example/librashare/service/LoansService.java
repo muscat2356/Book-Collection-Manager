@@ -1,6 +1,7 @@
 package com.example.librashare.service;
 
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -87,10 +88,12 @@ public class LoansService {
             throw new EntityNotFoundException("BookCopy not found. requested=" + bookCopyIds);
         }
 
+        Set<Long> requestBookIds = new HashSet<>();
         Set<Long> borrowedBookIds = loanRepository.findBorrowedBookIdsByUserId(userId, LoanStatus.BORROWED);
 
         boolean loanBook = bookCopies.stream()
-                                    .anyMatch(b -> borrowedBookIds.contains(b.getBook().getId()));
+                                    .anyMatch(b -> !requestBookIds.add(b.getBook().getId())
+                                                || borrowedBookIds.contains(b.getBook().getId()));
 
         if (loanBook) {
             throw new BusinessException("DUPLICATION_LOAN_ERROR", "同一書籍を貸し出しているため、貸し出しができません");
