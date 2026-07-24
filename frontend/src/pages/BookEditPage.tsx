@@ -3,12 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import type { Book, CopyStatus } from "../types/Book";
 import { addBookCopy, deleteBook, deleteBookCopy, fetchBookById, updateBook } from "../api/books";
 import { useApiClient } from "../api/ApiClientContext";
+import type { CategoryNode } from "../types/Category";
+import { fetchCategoryTree } from "../api/categories";
 
 export function BookEditPage(){
     type BookFormData = {
         title: string
         author: string
         isbn: string
+        publisher: string
     }
 
     const navigate = useNavigate()
@@ -22,7 +25,14 @@ export function BookEditPage(){
     const [submitting, setSubmitting] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [copyBusy, setCopyBusy] = useState(false)
+    const [tree, setTree] = useState<CategoryNode[]>([])
+    const [largeId, setLargeId] = useState<number | "">("")
+    const [mediumId, setMediumId] = useState<number | "">("")
+    const [smallId, setSmallId] = useState<number | "">("")
+    const [categoryLoading, setCategoryLoading] = useState(true)
+    const [categoryError, setCategoryError] = useState<string | null>(null)
 
+    
     function statusLabel(status: CopyStatus): string {
     return status === "AVAILABLE" ? "貸出可" : "貸出中"
     }
@@ -33,7 +43,7 @@ export function BookEditPage(){
         setError(null)
         setSubmitting(true)
 
-        updateBook(apiClient, id, formData)
+        updateBook(apiClient, id, { ...formData, categorySmallId: smallId === "" ? null : smallId,})
         .then(() => navigate(`/books/${id}`))
         .catch((error) => setError(error.message))
         .finally(() => setSubmitting(false))
@@ -134,6 +144,7 @@ export function BookEditPage(){
                     title: data.title,
                     author: data.author,
                     isbn: data.isbn,
+                    publisher: data.publisher
                 });
             })
             .catch((err) => { 
@@ -149,6 +160,51 @@ export function BookEditPage(){
         }
         
     }, [id, apiClient])
+
+    useEffect(() => {
+        let ignore = false
+        setCategoryLoading(true)
+        setCategoryError(null)
+        fetchCategoryTree(apiClient)
+            .then((data) => {
+                if(!ignore) setTree(data)
+            })
+            .catch((err) => {
+            if(!ignore) {
+                setCategoryError(err instanceof Error ? err.message : "カテゴリの取得に失敗しました")
+            }
+            })
+            .finally(() => {
+                if(!ignore) setCategoryLoading(false)
+            })
+        return () => {
+            ignore = true
+        }
+    }, [apiClient])
+
+    useEffect(() => {
+        if (!book?.category || tree.length === 0) return
+        setLargeId(book.category.largeId)
+        setMediumId(book.category.mediumId)
+        setSmallId(book.category.smallId)
+      }, [book, tree])
+
+    const largeNode = tree.find((n) => n.id === largeId)
+    const mediumOptions = largeNode?.children ?? []
+    const mediumNode = mediumOptions.find((n) => n.id === mediumId)
+    const smallOptions = mediumNode?.children ?? []
+    const categoryDisabled = categoryLoading || !!categoryError
+
+    function handleLargeChange(value: string) {
+        setLargeId(value === "" ? "" : Number(value))
+        setMediumId("")
+        setSmallId("")
+      }
+      function handleMediumChange(value: string) {
+        setMediumId(value === "" ? "" : Number(value))
+        setSmallId("")
+      }
+
 
     if(loading) {
         return <p className="page-status">読み込み中・・・</p>
@@ -217,6 +273,78 @@ export function BookEditPage(){
                      required
                       />
                 </div>
+
+                <div>
+                    <label htmlFor="publisher">出版社：</label>
+                    <input
+                     id="publisher"
+                     type="text"
+                     value={formData.publisher}
+                     onChange={(e) =>
+                        setFormData({...formData, publisher: e.target.value})
+                     }
+                     required />
+                </div>
+
+                {categoryError && (
+                  <p className="page-status page-status--error">{categoryError}</p>
+                )}
+
+                <div className="category-cascade">
+                  <p className="category-cascade__title">カテゴリ</p>
+                  <div>
+                    <label htmlFor="category-large">大カテゴリ：</label>
+                    <select
+                      id="category-large"
+                      value={largeId === "" ? "" : String(largeId)}
+                      onChange={(e) => handleLargeChange(e.target.value)}
+                      disabled={categoryDisabled || submitting}
+                    >
+                      <option value="">（未選択）</option>
+                      {tree.map((n) => (
+                        <option key={n.id} value={n.id}>
+                          {n.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="category-medium">中カテゴリ：</label>
+                    <select
+                      id="category-medium"
+                      value={mediumId === "" ? "" : String(mediumId)}
+                      onChange={(e) => handleMediumChange(e.target.value)}
+                      disabled={categoryDisabled || submitting || largeId === ""}
+                    >
+                      <option value="">（未選択）</option>
+                      {mediumOptions.map((n) => (
+                        <option key={n.id} value={n.id}>
+                          {n.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="category-small">小カテゴリ：</label>
+                    <select
+                      id="category-small"
+                      value={smallId === "" ? "" : String(smallId)}
+                      onChange={(e) =>
+                        setSmallId(e.target.value === "" ? "" : Number(e.target.value))
+                      }
+                      disabled={categoryDisabled || submitting || mediumId === ""}
+                    >
+                      <option value="">（未分類）</option>
+                      {smallOptions.map((n) => (
+                        <option key={n.id} value={n.id}>
+                          {n.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+
 
                 <button
                 type="submit"

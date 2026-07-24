@@ -496,3 +496,42 @@ a.btn[aria-disabled="true"] {
   text-decoration: none;
   display: inline-block;
 }
+
+/* ===== カテゴリ 大→中→小カスケード ===== */
+
+.category-cascade {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  background: #f7fafc;
+}
+
+.category-cascade__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.category-cascade > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.category-cascade label {
+  font-size: 0.875rem;
+}
+
+.category-cascade select {
+  max-width: 20rem;
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+}
+
+.category-cascade select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

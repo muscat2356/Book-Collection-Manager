@@ -896,6 +896,31 @@ a.btn[aria-disabled="true"] {
   background: var(--secondary-bg);
 }
 
+/* カテゴリ 大→中→小カスケード */
+.page form .category-cascade {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 1rem 1.1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.page form .category-cascade__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.page form .category-cascade > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
 /* number 入力のスピナー調整 */
 .page form input[type="number"] {
   -moz-appearance: textfield;
