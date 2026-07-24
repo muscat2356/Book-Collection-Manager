@@ -457,6 +457,174 @@ button.nav-link:hover {
   font-weight: 600;
 }
 
+.book-detail__meta {
+  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.book-detail__row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.5rem 0.75rem;
+  align-items: start;
+  margin: 0;
+}
+
+.book-detail__row dt {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-h);
+  padding-top: 0.15rem;
+}
+
+.book-detail__row dd {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.book-detail__row--publisher dd,
+.book-publisher {
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.book-detail__row--category {
+  align-items: center;
+}
+
+/* ===== カテゴリ色分け（大カテゴリ名で data 属性） ===== */
+
+.book-category {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.book-category__sep {
+  color: var(--text-muted);
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+.book-category__empty {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.book-category__chip {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+
+.book-category__chip--medium,
+.book-category__chip--small {
+  font-weight: 500;
+  opacity: 0.95;
+}
+
+/* デフォルト（未知の大カテゴリ） */
+.book-category {
+  --cat-bg: #eef2f4;
+  --cat-fg: #3d4a52;
+  --cat-border: #c5d0d4;
+}
+
+.book-category[data-category-large="技術"] {
+  --cat-bg: #e3f2f0;
+  --cat-fg: #1a5c55;
+  --cat-border: #8fc4bc;
+}
+
+.book-category[data-category-large="ビジネス"] {
+  --cat-bg: #e8eef6;
+  --cat-fg: #2a4060;
+  --cat-border: #9aafc9;
+}
+
+.book-category[data-category-large="文学"] {
+  --cat-bg: #f6ebe8;
+  --cat-fg: #6b3a32;
+  --cat-border: #d4a99f;
+}
+
+.book-category[data-category-large="人文・社会"] {
+  --cat-bg: #eef0e4;
+  --cat-fg: #4a5230;
+  --cat-border: #b5bc8f;
+}
+
+.book-category[data-category-large="自然科学"] {
+  --cat-bg: #e6f0e8;
+  --cat-fg: #2d5a3d;
+  --cat-border: #8fba9a;
+}
+
+.book-category[data-category-large="語学"] {
+  --cat-bg: #e7f1f8;
+  --cat-fg: #1e4f6f;
+  --cat-border: #8fb8d4;
+}
+
+.book-category[data-category-large="実用・ライフ"] {
+  --cat-bg: #f7f0e4;
+  --cat-fg: #6a5228;
+  --cat-border: #d4bc8a;
+}
+
+.book-category[data-category-large="芸術・趣味"] {
+  --cat-bg: #f5e9ec;
+  --cat-fg: #6b3548;
+  --cat-border: #d4a0b0;
+}
+
+.book-category[data-category-large="児童・YA"] {
+  --cat-bg: #eef6e6;
+  --cat-fg: #3f5c28;
+  --cat-border: #a8c98a;
+}
+
+.book-category[data-category-large="コミック・雑誌"] {
+  --cat-bg: #f8eee4;
+  --cat-fg: #6b4520;
+  --cat-border: #d4b08a;
+}
+
+.book-category[data-category-large="その他"],
+.book-category--empty {
+  --cat-bg: #eef0f2;
+  --cat-fg: #4a5560;
+  --cat-border: #c0c6cc;
+}
+
+.book-category__chip--large {
+  background: var(--cat-bg);
+  color: var(--cat-fg);
+  border-color: var(--cat-border);
+}
+
+.book-category__chip--medium {
+  background: color-mix(in srgb, var(--cat-bg) 70%, white);
+  color: var(--cat-fg);
+  border-color: color-mix(in srgb, var(--cat-border) 60%, white);
+}
+
+.book-category__chip--small {
+  background: transparent;
+  color: var(--cat-fg);
+  border-color: var(--cat-border);
+  border-style: dashed;
+}
+
 /* ===== 所蔵一覧（書誌詳細） ===== */
 
 .holdings {

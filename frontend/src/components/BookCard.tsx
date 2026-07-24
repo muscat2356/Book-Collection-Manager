@@ -1,5 +1,6 @@
 import type { Book } from '../types/Book'
 import { StockBadge } from './StockBadge'
+import { BookCategory } from './BookCategory'
 import { Link } from 'react-router-dom'
 
 type BookCardProps = {
@@ -28,11 +29,10 @@ export function BookCard({ book, to, linkLabel = "詳細を見る →" }: BookCa
           <dt>ISBN</dt>
           <dd>ISBN：{book.isbn}</dd>
           <dt>出版社</dt>
-          <dd>出版社：{book.publisher}</dd>
+          <dd className="book-publisher">出版社：{book.publisher}</dd>
           <dt>カテゴリ</dt>
           <dd>
-            カテゴリ：
-            {book.category ? `${book.category.largeName} > ${book.category.mediumName} > ${book.category.smallName}` : "-"}
+            <BookCategory category={book.category} />
           </dd>
         </dl>
         <Link to={href} className="book-card__link">

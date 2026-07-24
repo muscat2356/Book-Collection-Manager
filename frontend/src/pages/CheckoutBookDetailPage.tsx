@@ -4,6 +4,7 @@ import { useApiClient } from "../api/ApiClientContext";
 import { useLoanCheckout } from "../loans/LoanContext";
 import { useEffect, useState } from "react";
 import { fetchBookById } from "../api/books";
+import { BookCategory } from "../components/BookCategory";
 
 function statusLabel(status: CopyStatus): string {
     return status === "AVAILABLE" ? "貸出可" : "貸出中"
@@ -76,14 +77,26 @@ export function CheckoutBookDetailPage() {
           ← 一覧へ
         </Link>
         <h2>{book.title}</h2>
-        <p>
-          <strong>著者：</strong>
-          {book.author}
-        </p>
-        <p>
-          <strong>ISBN：</strong>
-          {book.isbn}
-        </p>
+        <dl className="book-detail__meta checkout-book-meta">
+          <div className="book-detail__row">
+            <dt>著者</dt>
+            <dd>{book.author}</dd>
+          </div>
+          <div className="book-detail__row">
+            <dt>ISBN</dt>
+            <dd>{book.isbn}</dd>
+          </div>
+          <div className="book-detail__row book-detail__row--publisher">
+            <dt>出版社</dt>
+            <dd className="book-publisher">{book.publisher}</dd>
+          </div>
+          <div className="book-detail__row book-detail__row--category">
+            <dt>カテゴリ</dt>
+            <dd>
+              <BookCategory category={book.category} />
+            </dd>
+          </div>
+        </dl>
 
         <section className="holdings">
             <h3 className="holdings__title">所蔵</h3>

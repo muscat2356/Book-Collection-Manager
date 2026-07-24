@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import type { Book, CopyStatus } from "../types/Book"
 import { StockBadge } from "./StockBadge"
+import { BookCategory } from "./BookCategory"
 import { useAuth } from "../auth/AuthContext"
 import { isAdmin } from "../auth/roles"
 
@@ -21,15 +22,26 @@ export function BookDetail({ book } : BookDetailProps) {
     return (
         <article className="book-detail">
             <h2>{book.title}</h2>
-            <p><strong>著者：</strong>{book.author}</p>
-            <p><strong>ISBN：</strong>{book.isbn}</p>
-            <p><strong>出版社：</strong>{book.publisher}</p>
-            <p>
-              <strong>カテゴリ：</strong>
-              {book.category
-                ? `${book.category.largeName} > ${book.category.mediumName} > ${book.category.smallName}`
-                : "—"}
-            </p>
+            <dl className="book-detail__meta">
+              <div className="book-detail__row">
+                <dt>著者</dt>
+                <dd>{book.author}</dd>
+              </div>
+              <div className="book-detail__row">
+                <dt>ISBN</dt>
+                <dd>{book.isbn}</dd>
+              </div>
+              <div className="book-detail__row book-detail__row--publisher">
+                <dt>出版社</dt>
+                <dd className="book-publisher">{book.publisher}</dd>
+              </div>
+              <div className="book-detail__row book-detail__row--category">
+                <dt>カテゴリ</dt>
+                <dd>
+                  <BookCategory category={book.category} />
+                </dd>
+              </div>
+            </dl>
             <StockBadge
               availableCount={book.availableCount}
               totalCount={book.totalCount}
