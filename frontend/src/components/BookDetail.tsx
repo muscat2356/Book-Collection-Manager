@@ -23,6 +23,13 @@ export function BookDetail({ book } : BookDetailProps) {
             <h2>{book.title}</h2>
             <p><strong>著者：</strong>{book.author}</p>
             <p><strong>ISBN：</strong>{book.isbn}</p>
+            <p><strong>出版社：</strong>{book.publisher}</p>
+            <p>
+              <strong>カテゴリ：</strong>
+              {book.category
+                ? `${book.category.largeName} > ${book.category.mediumName} > ${book.category.smallName}`
+                : "—"}
+            </p>
             <StockBadge
               availableCount={book.availableCount}
               totalCount={book.totalCount}

@@ -27,6 +27,13 @@ export function BookCard({ book, to, linkLabel = "詳細を見る →" }: BookCa
           <dd>著者：{book.author}</dd>
           <dt>ISBN</dt>
           <dd>ISBN：{book.isbn}</dd>
+          <dt>出版社</dt>
+          <dd>出版社：{book.publisher}</dd>
+          <dt>カテゴリ</dt>
+          <dd>
+            カテゴリ：
+            {book.category ? `${book.category.largeName} > ${book.category.mediumName} > ${book.category.smallName}` : "-"}
+          </dd>
         </dl>
         <Link to={href} className="book-card__link">
           {linkLabel}
