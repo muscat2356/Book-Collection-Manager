@@ -6,8 +6,8 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.example.librashare.domain.CopyStatus;
 import com.example.librashare.domain.Loan;
 import com.example.librashare.domain.LoanStatus;
 import com.example.librashare.domain.User;
@@ -17,7 +17,7 @@ import com.example.librashare.repository.LoanRepository;
 import com.example.librashare.repository.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
+
 
 /**
  * ユーザーのCRUD機能を実装したService
@@ -58,7 +58,7 @@ public class UserService {
      * @return　DBから該当書籍IDをリターン（レスポンスで使用するため）
      */
     public Optional<User> findById(Long id){
-        return userRepository.findById(id);
+        return userRepository.findByIdAndIsActiveTrue(id);
     }
 
     /**
@@ -84,7 +84,7 @@ public class UserService {
     @Transactional
     public User update(Long id, String displayName, String email){
 
-        Optional<User> optinalUser = userRepository.findById(id);
+        Optional<User> optinalUser = userRepository.findByIdAndIsActiveTrue(id);
 
         //ユーザーが存在するのか確認 404　GlobalExceptionHandlerで捕捉
         if(optinalUser.isEmpty()){
@@ -120,7 +120,7 @@ public class UserService {
      */
     @Transactional
     public void deleteUser(Long id){
-        Optional<User> optinalUser = userRepository.findById(id);
+        Optional<User> optinalUser = userRepository.findByIdAndIsActiveTrue(id);
 
         if(optinalUser.isEmpty()){
             logger.warn("ユーザーが存在しません id={}", id);
