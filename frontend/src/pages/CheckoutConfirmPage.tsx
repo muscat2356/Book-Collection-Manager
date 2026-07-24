@@ -39,7 +39,7 @@ export function CheckoutConfirmPage() {
       if (e instanceof LoanError) {
         if (e.errorCode === "BOOK_ALREADY_LOANED_BY_USER") {
           setError(
-            `${e.message} 「選び直す」から別の所蔵を選んでください。`
+            `${e.message} その本を選択から外してください。`
           )
           return
         }
@@ -47,7 +47,8 @@ export function CheckoutConfirmPage() {
           e.failedBookCopyIds.forEach((id) => removeCopy(id))
         }
       }
-      setError(e instanceof Error ? e.message : "貸出に失敗しました")    } finally {
+      setError(e instanceof Error ? e.message : "貸出に失敗しました")
+    } finally {
       submittingRef.current = false
       setSubmitting(false)
     }

@@ -62,13 +62,6 @@ export function CheckoutBookDetailPage() {
         if(!book || holding.status !== "AVAILABLE") return
 
         if(checked) {
-          if(selectedBookCopies.some(
-            (c) => c.bookId === book.id && c.bookCopyId !== holding.id
-          )
-        ) 
-        {
-          return
-        }
 
         addCopy({bookCopyId: holding.id, bookId:book.id, title: book.title,})
         }
