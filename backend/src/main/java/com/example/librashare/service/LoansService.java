@@ -96,7 +96,7 @@ public class LoansService {
                                                 || borrowedBookIds.contains(b.getBook().getId()));
 
         if (loanBook) {
-            throw new BusinessException("DUPLICATION_LOAN_ERROR", "同一書籍を貸し出しているため、貸し出しができません");
+            throw new BusinessException("BOOK_ALREADY_LOANED_BY_USER", "同じ書誌は一人一冊までです");
         }
         
         List<Long> failedId = bookCopies.stream()
