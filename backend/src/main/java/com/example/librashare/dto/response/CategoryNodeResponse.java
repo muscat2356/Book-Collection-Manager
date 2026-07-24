@@ -12,10 +12,10 @@ public class CategoryNodeResponse {
     public CategoryNodeResponse() {
     }
     
-    public CategoryNodeResponse(Long id, String name, List<CategoryNodeResponse> children) {
+    public CategoryNodeResponse(Long id, String name) {
         this.id = id;
         this.name = name;
-        this.children = children;
+
     }
 
     public Long getId() {
