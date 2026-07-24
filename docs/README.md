@@ -56,6 +56,7 @@
 | ファイル | 説明 |
 |----------|------|
 | [front-f04-f05.md](./learning/front-f04-f05.md) | F-04/F-05 学習メモ |
+| [front-one-book-per-user.md](./learning/front-one-book-per-user.md) | 同一書誌は一人一冊（F-04 拡張）変数の言語化 |
 | [front-api-learning.md](./learning/front-api-learning.md) | API クライアント学習 |
 | [frontend-keycloak-learning.md](./learning/frontend-keycloak-learning.md) | Keycloak 学習 |
 

@@ -48,25 +48,27 @@ export function CheckoutBookDetailPage() {
         }
       }, [id, apiClient])
 
-      function onToggle(holdings: BookHolding, checked: boolean) {
-        if(!book || holdings.status !== "AVAILABLE") return
-        if(checked) {
-            addCopy({
-                bookCopyId:holdings.id,
-                bookId: book.id,
-                title: book.title,
-            })
-        }
-        else {
-            removeCopy(holdings.id)
-        }
-      }
 
       if (loading) return <p className="page-status">読み込み中…</p>
       if (error) return <p className="page-status page-status--error">{error}</p>
       if (!book) return <p className="page-status page-status--error">書籍が見つかりません</p>    
       
       const holdings = book.holdings ?? []
+      const alreadySelectedForThisBook = selectedBookCopies.some(
+        (c) => c.bookId === book.id
+      )
+
+      function onToggle(holding: BookHolding, checked: boolean) {
+        if(!book || holding.status !== "AVAILABLE") return
+
+        if(checked) {
+
+        addCopy({bookCopyId: holding.id, bookId:book.id, title: book.title,})
+        }
+        else{
+          removeCopy(holding.id)
+        }
+      }
 
       return (
         <div>
@@ -85,15 +87,16 @@ export function CheckoutBookDetailPage() {
 
         <section className="holdings">
             <h3 className="holdings__title">所蔵</h3>
+            <p className="page__lead">同じ書籍は1冊まで選択できます。</p>
             {holdings.length === 0 ? (
                 <p className="holdings__empty">所蔵がありません</p>
             ) : (
                 <ul className="checkout-holding-list">
                     {holdings.map((h) => {
-                        const disabled = h.status === "LOANED"
                         const checked = selectedBookCopies.some(
                             (c) => c.bookCopyId === h.id
                         )
+                        const disabled = h.status === "LOANED" || (alreadySelectedForThisBook && !checked)
                         return (
                             <li key={h.id}>
                             <label

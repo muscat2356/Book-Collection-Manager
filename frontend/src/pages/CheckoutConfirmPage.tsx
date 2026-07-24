@@ -36,8 +36,16 @@ export function CheckoutConfirmPage() {
       navigate("/loans/active")
     } catch (e) {
       // 409 で失敗した所蔵は選択から外す（残りは選び直せる状態にする）
-      if (e instanceof LoanError && e.failedBookCopyIds?.length) {
-        e.failedBookCopyIds.forEach((id) => removeCopy(id))
+      if (e instanceof LoanError) {
+        if (e.errorCode === "BOOK_ALREADY_LOANED_BY_USER") {
+          setError(
+            `${e.message} その本を選択から外してください。`
+          )
+          return
+        }
+        if (e.failedBookCopyIds?.length) {
+          e.failedBookCopyIds.forEach((id) => removeCopy(id))
+        }
       }
       setError(e instanceof Error ? e.message : "貸出に失敗しました")
     } finally {

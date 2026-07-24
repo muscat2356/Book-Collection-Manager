@@ -29,12 +29,17 @@ export function LoanProvider({ children }: {children: ReactNode}) {
 
     const value = useMemo<LoanContextValue>(() => {
         function addCopy(copy: SelectedBookCopy) {
-            setSelectedBookCopies((prev) =>
-                prev.some((c) => c.bookCopyId === copy.bookCopyId)
-                    ? prev
-                    : [...prev, copy]
-            )
+            setSelectedBookCopies((prev) => {
+                if (prev.some((c) => c.bookCopyId === copy.bookCopyId)){
+                    return prev
+                }
+                if (prev.some((c) => c.bookId === copy.bookId)){
+                    return prev
+                }
+            return [...prev, copy]
+            })
         }
+        
         function removeCopy(bookCopyId: number) {
             setSelectedBookCopies((prev) =>
                 prev.filter((c) => c.bookCopyId !== bookCopyId)
