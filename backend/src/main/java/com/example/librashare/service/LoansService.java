@@ -1,8 +1,10 @@
 package com.example.librashare.service;
 
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,6 +86,17 @@ public class LoansService {
 
         if (bookCopies.size() != bookCopyIds.size()) {
             throw new EntityNotFoundException("BookCopy not found. requested=" + bookCopyIds);
+        }
+
+        Set<Long> requestBookIds = new HashSet<>();
+        Set<Long> borrowedBookIds = loanRepository.findBorrowedBookIdsByUserId(userId, LoanStatus.BORROWED);
+
+        boolean loanBook = bookCopies.stream()
+                                    .anyMatch(b -> !requestBookIds.add(b.getBook().getId())
+                                                || borrowedBookIds.contains(b.getBook().getId()));
+
+        if (loanBook) {
+            throw new BusinessException("BOOK_ALREADY_LOANED_BY_USER", "同じ書誌は一人一冊までです");
         }
         
         List<Long> failedId = bookCopies.stream()

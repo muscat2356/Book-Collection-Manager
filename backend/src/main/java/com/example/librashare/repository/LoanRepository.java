@@ -2,6 +2,7 @@ package com.example.librashare.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -27,4 +28,12 @@ public interface LoanRepository extends JpaRepository<Loan, Long>{
 
     //該当ユーザーIDに紐づいた貸出リストを検索
     List<Loan> findByUserId(Long id);
+
+    //ユーザーIDをもとに、書籍の貸し出し検索
+    @Query("""
+    select l.bookCopy.book.id from Loan l
+    where l.user.id = :userId and l.status = :status
+    """)
+    Set<Long> findBorrowedBookIdsByUserId(@Param("userId") Long userId, @Param("status") LoanStatus status);
+
 }
