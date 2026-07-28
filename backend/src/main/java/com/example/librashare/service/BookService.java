@@ -53,10 +53,9 @@ public class BookService {
      * @return　DBから書籍を全件リターン
      */
     public List<BookResponse> findAll() {
-       return bookRepository.findAll().stream()
-       .filter(book -> !book.isDeleted())
-       .map(book -> toResponse(book, false))
-       .toList();
+       return bookRepository.findAllByDeletedFalse().stream()
+                        .map(book -> toResponse(book, false))
+                        .toList();
     }
 
     /**
@@ -65,10 +64,8 @@ public class BookService {
      * @return　DBから該当書籍IDをリターン（レスポンスで使用するため）
      */
     public Optional<BookResponse> findById(Long id) {
-        return bookRepository.findById(id)
-        .filter(b -> !b.isDeleted())
-        .map(b -> toResponse(b, true));
-
+        return bookRepository.findByIdAndDeletedFalse(id)
+            .map(b -> toResponse(b, true));
     }
 
     /**
@@ -121,8 +118,7 @@ public class BookService {
      */
     @Transactional
     public Optional<BookResponse> updateBook(Long id, BookPutRequest request) {
-        return bookRepository.findById(id)
-            .filter(b -> !b.isDeleted())
+        return bookRepository.findByIdAndDeletedFalse(id)
             .map(book -> {
                 book.setTitle(request.getTitle());
                 book.setAuthor(request.getAuthor());
