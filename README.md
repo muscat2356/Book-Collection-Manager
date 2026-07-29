@@ -3,6 +3,43 @@
 社内バックオフィス向けに、蔵書の登録・検索・貸出/返却、貸出対象ユーザーを管理する Web アプリケーション。  
 認証基盤を Keycloak に外部化し、Spring Boot REST API と React SPA を分離構成で構築したポートフォリオ作品です。管理画面はログイン済みの社員が利用し、貸出対象の一般ユーザーも Keycloak で管理します。
 
+
+## 起動方法
+
+```bash
+# 1. リポジトリを clone
+git clone https://github.com/spiritualmasa/LibraShare.git
+cd LibraShare
+
+# 2. バックエンド + DB + Keycloak を起動
+docker compose up -d
+
+# 3. フロントエンド（開発時）
+cd frontend
+npm install
+npm run dev
+```
+
+| サービス | URL（例） |
+|----------|-----------|
+| Frontend | http://localhost:5173 |
+| API | http://localhost:8081 |
+| Swagger UI | http://localhost:8081/swagger-ui.html |
+| Keycloak | http://localhost:8080 |
+
+## デモアカウント（Keycloak `LibraShare` realm）
+
+テストユーザーは `docker/keycloak/import/LibraShare-realm.json` で import されます。パスワードは Keycloak 管理コンソール（`admin` / `admin`）で確認・再設定してください。
+
+| ロール | ユーザー名 | 用途 |
+|--------|------------|------|
+| `admin_employee` | `admin_test@example.com` | 蔵書追加・更新・削除、利用者管理、貸出・返却 |
+| `general_employee` | `employee_test@example.com` | 書誌一覧・詳細、利用者管理、貸出・返却 |
+| `general_user` | `user_test@example.com` | 貸出対象の利用者サンプル（SPA 利用不可） |
+
+---
+
+
 ## 概要
 
 | 項目 | 内容 |
@@ -345,41 +382,6 @@ MVP-A の実装・マージは一通り完了。書誌/所蔵分離・checkout �
 - Node.js 20+（フロント開発時）
 - Docker / Docker Compose
 - Maven 3.9+
-
-## 起動方法
-
-```bash
-# 1. リポジトリを clone
-git clone https://github.com/spiritualmasa/LibraShare.git
-cd LibraShare
-
-# 2. バックエンド + DB + Keycloak を起動
-docker compose up -d
-
-# 3. フロントエンド（開発時）
-cd frontend
-npm install
-npm run dev
-```
-
-| サービス | URL（例） |
-|----------|-----------|
-| Frontend | http://localhost:5173 |
-| API | http://localhost:8081 |
-| Swagger UI | http://localhost:8081/swagger-ui.html |
-| Keycloak | http://localhost:8080 |
-
-## デモアカウント（Keycloak `LibraShare` realm）
-
-テストユーザーは `docker/keycloak/import/LibraShare-realm.json` で import されます。パスワードは Keycloak 管理コンソール（`admin` / `admin`）で確認・再設定してください。
-
-| ロール | ユーザー名 | 用途 |
-|--------|------------|------|
-| `admin_employee` | `admin_test@example.com` | 蔵書追加・更新・削除、利用者管理、貸出・返却 |
-| `general_employee` | `employee_test@example.com` | 書誌一覧・詳細、利用者管理、貸出・返却 |
-| `general_user` | `user_test@example.com` | 貸出対象の利用者サンプル（SPA 利用不可） |
-
----
 
 ## スクリーンショット
 
