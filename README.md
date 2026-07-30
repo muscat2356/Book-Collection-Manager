@@ -37,6 +37,18 @@ npm run dev
 | `general_employee` | `employee_test@example.com` | 書誌一覧・詳細、利用者管理、貸出・返却 |
 | `general_user` | `user_test@example.com` | 貸出対象の利用者サンプル（SPA 利用不可） |
 
+### デモユーザーログイン方法
+```
+蔵書管理アプリ
+ログイン名`admin_test@example.com`
+パスワード`password`
+
+keycloak
+ログイン名`admin`
+パスワード`admin`
+
+```
+
 ---
 
 
