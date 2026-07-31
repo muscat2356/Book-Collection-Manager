@@ -142,6 +142,7 @@ keycloak
 | ファイル | 説明 |
 |----------|------|
 | [openapi.yaml](./docs/api/openapi.yaml) | OpenAPI 3.1 仕様（MVP-A） |
+| [openapi-notes.md](./docs/api/openapi-notes.md) | API 補足メモ・JSON 例 |
 
 ---
 
