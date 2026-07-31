@@ -135,13 +135,13 @@ keycloak
 
 | ファイル | 説明 |
 |----------|------|
-| [er-diagram.md](./database/er-diagram.md) | ER 図・制約・到達 SQL |
+| [er-diagram.md](./docs/database/er-diagram.md) | ER 図・制約・到達 SQL |
 
 ## API（api/）
 
 | ファイル | 説明 |
 |----------|------|
-| [openapi.yaml](./api/openapi.yaml) | OpenAPI 3.1 仕様（MVP-A） |
+| [openapi.yaml](./docs/api/openapi.yaml) | OpenAPI 3.1 仕様（MVP-A） |
 
 ---
 
