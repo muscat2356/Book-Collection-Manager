@@ -4,6 +4,10 @@
 
 管理画面はログイン済みの社員が利用し、貸出対象の一般ユーザーも Keycloak で管理します。
 
+## アーキテクチャ
+<img width="2274" height="699" alt="architecture (1)" src="https://github.com/user-attachments/assets/2e60f777-1bed-4897-b697-1da37a2d2039" />
+
+
 ## 起動方法
 
 ```bash
